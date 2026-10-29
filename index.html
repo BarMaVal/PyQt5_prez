@@ -1,0 +1,2335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyQt5 — Умные заметки</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#1e1e1e;--bg2:#252526;--bg3:#2d2d30;--code:#2d2d2d;--hover:#3e3e42;--text:#d4d4d4;--text2:#858585;--bright:#fff;--accent:#4ec9b0;--accentH:#5dd4b8;--orange:#ce9178;--blue:#569cd6;--yellow:#dcdcaa;--pink:#c586c0;--green:#6a9955;--border:#3e3e42;--shadow:0 2px 12px rgba(0,0,0,.4);--tr:.3s ease}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7;font-size:16px;overflow-x:hidden}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.header-title{font-size:1rem;font-weight:600;color:var(--bright);display:flex;align-items:center;gap:10px}
+.progress-container{display:flex;align-items:center;gap:12px}
+.progress-text{font-size:.85rem;color:var(--text2);font-variant-numeric:tabular-nums;min-width:110px;text-align:right}
+.progress-bar{width:180px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);transition:width var(--tr);border-radius:2px}
+.main{max-width:1100px;margin:0 auto;padding:40px 32px 100px;min-height:calc(100vh - 70px)}
+.slide{display:none;animation:fadeIn .4s ease}
+.slide.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide-num{display:inline-block;background:var(--accent);color:var(--bg);font-size:.75rem;font-weight:700;padding:4px 10px;border-radius:4px;margin-bottom:16px;letter-spacing:.5px}
+.slide-title{font-size:1.9rem;font-weight:700;color:var(--bright);margin-bottom:12px;line-height:1.3}
+.slide-sub{font-size:1.05rem;color:var(--text2);margin-bottom:28px;font-weight:400}
+.slide-content{display:flex;flex-direction:column;gap:22px}
+.text-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:22px}
+.text-block h3{color:var(--accent);font-size:1.05rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.text-block p{margin-bottom:12px;color:var(--text)}
+.text-block p:last-child{margin-bottom:0}
+.text-block ul,.text-block ol{margin-left:24px;margin-bottom:12px}
+.text-block li{margin-bottom:6px;color:var(--text)}
+.text-block li::marker{color:var(--accent)}
+.hl{color:var(--orange);font-weight:500}
+.ic{background:var(--bg3);color:var(--orange);padding:2px 6px;border-radius:3px;font-family:'Consolas',monospace;font-size:.9em}
+.code-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.code-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.code-label{font-size:.8rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.copy-btn{background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:.8rem;transition:all var(--tr)}
+.copy-btn:hover{background:var(--hover);color:var(--text);border-color:var(--accent)}
+.copy-btn.copied{color:var(--accent);border-color:var(--accent)}
+.code-body{padding:16px;overflow-x:auto;background:var(--code)}
+.code-body pre{margin:0;background:transparent;padding:0}
+.code-body code{font-family:'Consolas',monospace;font-size:.88rem;line-height:1.6;color:#d4d4d4}
+.code-body .kw{color:var(--pink)}
+.code-body .fn{color:var(--yellow)}
+.code-body .str{color:var(--orange)}
+.code-body .com{color:var(--green);font-style:italic}
+.code-body .num{color:#b5cea8}
+.code-body .bi{color:var(--accent)}
+.viz-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:22px}
+.viz-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.viz-head h3{color:var(--accent);font-size:1rem;font-weight:600}
+.viz-canvas-wrap{background:#000;border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:14px;display:flex;justify-content:center;align-items:center;min-height:180px}
+.viz-canvas{background:#1a1a2e;border-radius:4px;display:block;max-width:100%}
+.viz-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.viz-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:4px;cursor:pointer;font-size:.85rem;transition:all var(--tr)}
+.viz-btn:hover{background:var(--hover);border-color:var(--accent)}
+.viz-info{margin-top:12px;padding:10px 12px;background:var(--bg3);border-radius:4px;font-size:.85rem;color:var(--text2);border-left:3px solid var(--accent);line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:18px;transition:border-color var(--tr)}
+.card:hover{border-color:var(--accent)}
+.card .icon{font-size:1.7rem;margin-bottom:10px}
+.card h4{color:var(--bright);font-size:.95rem;margin-bottom:6px}
+.card p{color:var(--text2);font-size:.88rem;line-height:1.5}
+.flow{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.flow-step{display:flex;align-items:center;gap:14px;padding:10px 14px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--accent)}
+.flow-step .sn{background:var(--accent);color:var(--bg);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0}
+.flow-step .st{color:var(--text);font-size:.92rem}
+.flow-step .sc{color:var(--orange);font-family:'Consolas',monospace;font-size:.82rem;margin-top:3px}
+.flow-arrow{text-align:center;color:var(--text2);font-size:1.1rem}
+.app-preview{background:var(--bg2);border:2px solid var(--accent);border-radius:8px;padding:20px}
+.app-window{background:#2b2b2b;border:1px solid #555;border-radius:6px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.app-titlebar{background:#3e3e42;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.app-titlebar .dots{display:flex;gap:4px}
+.app-titlebar .dot{width:10px;height:10px;border-radius:50%}
+.app-titlebar .title{color:#d4d4d4;font-size:12px;margin-left:8px}
+.app-body{display:flex;height:400px}
+.app-col1{flex:2;padding:12px;border-right:1px solid #555;display:flex;flex-direction:column;gap:8px}
+.app-col2{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px}
+.app-textarea{flex:1;background:#2d2d2d;border:1px solid #555;border-radius:4px;padding:8px;color:#d4d4d4;font-size:11px}
+.app-list{flex:1;background:#2d2d2d;border:1px solid #555;border-radius:4px;padding:6px;color:#d4d4d4;font-size:11px}
+.app-btn{background:#4ec9b0;color:#000;border:none;padding:6px 10px;border-radius:4px;font-size:11px;cursor:pointer}
+.app-btn.sec{background:#3e3e42;color:#d4d4d4}
+.app-input{background:#3c3c3c;border:1px solid #555;border-radius:4px;padding:6px;color:#d4d4d4;font-size:11px}
+.app-label{color:#858585;font-size:11px;font-weight:600}
+.app-row{display:flex;gap:6px}
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:center;gap:14px;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.3)}
+.nav-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 20px;border-radius:6px;cursor:pointer;font-size:.88rem;font-weight:500;transition:all var(--tr)}
+.nav-btn:hover:not(:disabled){background:var(--hover);border-color:var(--accent)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.nav-btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.nav-btn.primary:hover:not(:disabled){background:var(--accentH)}
+.nav-dots{display:flex;gap:6px;margin:0 10px;max-width:500px;overflow-x:auto;padding:4px 0}
+.nav-dots::-webkit-scrollbar{height:4px}
+.nav-dots::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.nav-dot{width:7px;height:7px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:all var(--tr);flex-shrink:0}
+.nav-dot.active{background:var(--accent);border-color:var(--accent)}
+.nav-dot:hover{border-color:var(--accent)}
+.kbd-hint{position:fixed;bottom:75px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.72rem;color:var(--text2);opacity:.7}
+.kbd{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:'Consolas',monospace;font-size:.72rem;color:var(--text)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+@media(max-width:768px){.header{padding:10px 14px;flex-wrap:wrap;gap:6px}.progress-bar{width:100px}.main{padding:20px 14px 90px}.slide-title{font-size:1.4rem}.nav{padding:10px 14px}.nav-btn{padding:7px 14px;font-size:.82rem}.kbd-hint{display:none}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="header-title"><span>🖥️</span><span>PyQt5 — Умные заметки</span></div>
+<div class="progress-container">
+<div class="progress-bar"><div class="progress-fill" id="pFill" style="width:3.7%"></div></div>
+<div class="progress-text" id="pText">Слайд 1 из 27</div>
+</div>
+</header>
+<main class="main" id="slides">
+
+<!-- СЛАЙД 1 -->
+<section class="slide active" data-slide="1">
+<span class="slide-num">СЛАЙД 1 / 27</span>
+<h1 class="slide-title">Создание графических приложений на Python с PyQt5</h1>
+<p class="slide-sub">Полное руководство на примере приложения "Умные заметки"</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📖 Что такое GUI?</h3>
+<p><span class="hl">GUI</span> (Graphical User Interface) — графический интерфейс пользователя. В отличие от консольных программ, GUI-приложения используют окна, кнопки, поля ввода и другие визуальные элементы.</p>
+<p style="margin-top:12px"><strong>Зачем нужен GUI?</strong></p>
+<ul>
+<li>Делает программу понятной для обычных пользователей</li>
+<li>Позволяет создавать профессиональные приложения</li>
+<li>Упрощает взаимодействие с программой</li>
+<li>Кроссплатформенность (Windows, macOS, Linux)</li>
+</ul>
+</div>
+<div class="grid">
+<div class="card"><div class="icon"></div><h4>Python + Qt</h4><p>PyQt5 объединяет мощь Python с профессиональной библиотекой Qt.</p></div>
+<div class="card"><div class="icon">🎨</div><h4>Современный дизайн</h4><p>Создавайте приложения с профессиональным внешним видом.</p></div>
+<div class="card"><div class="icon">🌍</div><h4>Кроссплатформенность</h4><p>Один код работает на Windows, macOS и Linux.</p></div>
+<div class="card"><div class="icon">📚</div><h4>Огромное сообщество</h4><p>Тысячи примеров и подробная документация.</p></div>
+</div>
+<div class="text-block">
+<h3>🎯 Что вы изучите</h3>
+<p>В этой презентации мы создадим приложение <strong>"Умные заметки"</strong> с нуля:</p>
+<ol>
+<li>Установка и настройка PyQt5</li>
+<li>Основные виджеты (кнопки, поля ввода, списки)</li>
+<li>Система сигналов и слотов</li>
+<li>Layouts для автоматического расположения элементов</li>
+<li>Стилизация с помощью CSS (включая псевдоклассы)</li>
+<li>Работа с изображениями и видео</li>
+<li>Сохранение и загрузка данных через JSON</li>
+</ol>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 2 -->
+<section class="slide" data-slide="2">
+<span class="slide-num">СЛАЙД 2 / 27</span>
+<h1 class="slide-title">Как будет выглядеть наше приложение</h1>
+<p class="slide-sub">Предварительный просмотр итогового результата</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🖼️ Приложение "Умные заметки"</h3>
+<p>В конце презентации у вас будет рабочее приложение с двумя колонками:</p>
+<ul>
+<li><strong>Левая колонка (шире):</strong> текстовое поле для редактирования заметки</li>
+<li><strong>Правая колонка (уже):</strong> список заметок, список тегов, кнопки управления</li>
+</ul>
+<p style="margin-top:12px">Соотношение колонок: <span class="ic">stretch=2</span> и <span class="ic">stretch=1</span> (2:1).</p>
+</div>
+<div class="app-preview">
+<div class="app-window">
+<div class="app-titlebar">
+<div class="dots"><div class="dot" style="background:#f48771"></div><div class="dot" style="background:#dcdcaa"></div><div class="dot" style="background:#4ec9b0"></div></div>
+<div class="title">Умные заметки</div>
+</div>
+<div class="app-body">
+<div class="app-col1">
+<div class="app-textarea">Здесь будет текст выбранной заметки...<br><br>Многострочное поле QTextEdit<br>занимает большую часть окна.</div>
+</div>
+<div class="app-col2">
+<div class="app-label">Список заметок</div>
+<div class="app-list">
+<div style="background:#4ec9b0;color:#000;padding:3px 6px;border-radius:3px;margin-bottom:3px">Покупки</div>
+<div style="padding:3px 6px">Задачи</div>
+<div style="padding:3px 6px">Идеи</div>
+</div>
+<div class="app-row"><button class="app-btn">Создать</button><button class="app-btn sec">Удалить</button></div>
+<div class="app-row"><button class="app-btn sec">Сохранить</button></div>
+<div class="app-label">Список тегов</div>
+<div class="app-list" style="flex:.5">
+<div style="padding:3px 6px">#важное</div>
+<div style="padding:3px 6px">#срочно</div>
+</div>
+<div class="app-input" style="margin-top:4px">Введите тег...</div>
+<div class="app-row"><button class="app-btn sec">Добавить</button><button class="app-btn sec">Открепить</button></div>
+<div class="app-row"><button class="app-btn sec">Искать по тегу</button></div>
+</div>
+</div>
+</div>
+</div>
+<div class="text-block">
+<h3>🔑 Ключевые возможности приложения</h3>
+<ul>
+<li>Создание, редактирование и удаление заметок</li>
+<li>Сохранение данных в файл JSON</li>
+<li>Система тегов для категоризации заметок</li>
+<li>Поиск заметок по тегу</li>
+<li>Двухколоночный интерфейс с пропорциями 2:1</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 3 -->
+<section class="slide" data-slide="3">
+<span class="slide-num">СЛАЙД 3 / 27</span>
+<h1 class="slide-title">Установка и настройка</h1>
+<p class="slide-sub">Подготовка рабочего окружения</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📦 Установка PyQt5</h3>
+<p>Для установки PyQt5 используйте менеджер пакетов pip:</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Команда установки</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body"><pre><code>pip install PyQt5</code></pre></div>
+</div>
+<div class="text-block">
+<h3>️ Лицензии: PyQt5 vs PySide2</h3>
+<p><span class="hl">PyQt5</span> распространяется под лицензией <strong>GPL</strong>:</p>
+<ul>
+<li>Для коммерческого закрытого проекта нужно либо открыть исходный код, либо купить коммерческую лицензию</li>
+<li>Для учебных и открытых проектов — бесплатно</li>
+</ul>
+<p style="margin-top:12px"><strong>Альтернатива:</strong> библиотека <span class="ic">PySide2</span> от компании Qt с лицензией <strong>LGPL</strong> (разрешает коммерческое использование без открытия кода).</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Альтернатива: PySide2</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># Установка PySide2 (лицензия LGPL)</span>
+pip install PySide2
+
+<span class="com"># Разница только в импортах:</span>
+<span class="com"># PyQt5:</span>
+<span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QApplication, QWidget
+
+<span class="com"># PySide2:</span>
+<span class="kw">from</span> PySide2.QtWidgets <span class="kw">import</span> QApplication, QWidget
+
+<span class="com"># API идентичен — меняется только название библиотеки!</span></code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>✅ Проверка установки</h3>
+<p>После установки проверьте, что всё работает:</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — проверка</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QApplication
+
+app = QApplication([])
+print(<span class="str">"PyQt5 успешно установлен!"</span>)</code></pre>
+</div>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 4 -->
+<section class="slide" data-slide="4">
+<span class="slide-num">СЛАЙД 4 / 27</span>
+<h1 class="slide-title">Структура PyQt5-приложения</h1>
+<p class="slide-sub">Обязательные элементы минимальной программы</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🔑 Обязательные элементы</h3>
+<p>Любое PyQt5-приложение содержит следующие обязательные элементы:</p>
+<ol>
+<li><span class="ic">from PyQt5.QtWidgets import ...</span> — импорт нужных виджетов</li>
+<li><span class="ic">app = QApplication([])</span> — создание объекта приложения</li>
+<li>Создание окна (QWidget)</li>
+<li><span class="ic">window.show()</span> — отображение окна</li>
+<li><span class="ic">app.exec_()</span> — запуск цикла событий</li>
+</ol>
+<p style="margin-top:12px"><strong>Важно:</strong> В PyQt5 используется <span class="ic">exec_()</span>, а не <span class="ic">exec()</span>, потому что <span class="ic">exec</span> является зарезервированным словом в Python 2.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — минимальное приложение</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QApplication, QWidget, QLabel
+
+<span class="com"># 1. Создаём объект приложения</span>
+app = QApplication([])
+
+<span class="com"># 2. Создаём главное окно</span>
+window = QWidget()
+window.setWindowTitle(<span class="str">"Моё первое приложение"</span>)
+window.resize(<span class="num">400</span>, <span class="num">300</span>)
+
+<span class="com"># 3. Создаём виджет и показываем окно</span>
+label = QLabel(<span class="str">"Привет, PyQt5!"</span>)
+label.setParent(window)
+window.show()
+
+<span class="com"># 4. Запускаем цикл событий приложения</span>
+app.exec_()</code></pre>
+</div>
+</div>
+<div class="flow">
+<h3 style="color:var(--accent);margin-bottom:10px">📋 Порядок выполнения</h3>
+<div class="flow-step"><div class="sn">1</div><div><div class="st">Импорт виджетов</div><div class="sc">from PyQt5.QtWidgets import ...</div></div></div>
+<div class="flow-arrow">↓</div>
+<div class="flow-step"><div class="sn">2</div><div><div class="st">Создание объекта приложения</div><div class="sc">app = QApplication([])</div></div></div>
+<div class="flow-arrow">↓</div>
+<div class="flow-step"><div class="sn">3</div><div><div class="st">Создание и настройка окна</div><div class="sc">window = QWidget(), window.show()</div></div></div>
+<div class="flow-arrow">↓</div>
+<div class="flow-step"><div class="sn">4</div><div><div class="st">Запуск цикла событий</div><div class="sc">app.exec_()</div></div></div>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 5 -->
+<section class="slide" data-slide="5">
+<span class="slide-num">СЛАЙД 5 / 27</span>
+<h1 class="slide-title">Объектная модель PyQt</h1>
+<p class="slide-sub">Всё в PyQt — это объекты</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🧩 Объектно-ориентированный подход</h3>
+<p>В PyQt5 <span class="hl">всё является объектами</span> (виджетами). Каждый виджет имеет:</p>
+<ul>
+<li><strong>Свойства (properties)</strong> — характеристики объекта (текст, размер, цвет)</li>
+<li><strong>Методы (methods)</strong> — функции для работы с объектом (setText(), show())</li>
+<li><strong>Сигналы (signals)</strong> — события, которые объект может генерировать (клик, изменение текста)</li>
+<li><strong>Слоты (slots)</strong> — функции, которые выполняются при получении сигнала</li>
+</ul>
+</div>
+<div class="grid">
+<div class="card"><div class="icon">📦</div><h4>Виджеты</h4><p>Все элементы интерфейса — объекты классов: QWidget, QPushButton, QLabel.</p></div>
+<div class="card"><div class="icon">🔗</div><h4>Сигналы и слоты</h4><p>Механизм связи между объектами: сигнал → слот (функция-обработчик).</p></div>
+<div class="card"><div class="icon">🌳</div><h4>Иерархия</h4><p>QWidget — базовый класс. Все виджеты наследуют от него.</p></div>
+<div class="card"><div class="icon">⚙️</div><h4>События</h4><p>Действия пользователя (клики, нажатия клавиш) генерируют события.</p></div>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — пример работы с объектами</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QPushButton
+
+<span class="com"># Создаём объект кнопки</span>
+button = QPushButton(<span class="str">"Нажми меня"</span>)
+
+<span class="com"># Свойства объекта</span>
+button.setText(<span class="str">"Новый текст"</span>)
+button.resize(<span class="num">200</span>, <span class="num">50</span>)
+
+<span class="com"># Сигналы и слоты</span>
+button.clicked.connect(on_button_click)
+
+<span class="com"># Когда пользователь кликает:</span>
+<span class="com"># 1. Генерируется сигнал clicked</span>
+<span class="com"># 2. Вызывается слот on_button_click()</span></code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>💡 Ключевая идея</h3>
+<p>PyQt5 построен на принципе <strong>"сигналы и слоты"</strong>:</p>
+<ul>
+<li><strong>Сигнал</strong> — сообщение о том, что что-то произошло (клик, изменение текста)</li>
+<li><strong>Слот</strong> — функция, которая выполняется при получении сигнала</li>
+<li><strong>Связь</strong> — устанавливается через метод <span class="ic">connect()</span></li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 6 -->
+<section class="slide" data-slide="6">
+<span class="slide-num">СЛАЙД 6 / 27</span>
+<h1 class="slide-title">QWidget — базовое окно</h1>
+<p class="slide-sub">Родительский класс для всех виджетов</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🪟 Что такое QWidget?</h3>
+<p><span class="hl">QWidget</span> — это базовый класс для всех виджетов в PyQt5. Он представляет собой прямоугольную область на экране.</p>
+<p style="margin-top:12px"><strong>Основные возможности:</strong></p>
+<ul>
+<li>Создание окна приложения</li>
+<li>Установка заголовка, размера и позиции</li>
+<li>Добавление других виджетов (кнопок, меток, полей ввода)</li>
+<li>Управление внешним видом (цвет фона, границы)</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — создание окна</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QWidget
+
+<span class="com"># Создаём окно</span>
+notes_win = QWidget()
+
+<span class="com"># Устанавливаем заголовок окна</span>
+notes_win.setWindowTitle(<span class="str">"Умные заметки"</span>)
+
+<span class="com"># Устанавливаем размер (ширина, высота)</span>
+notes_win.resize(<span class="num">900</span>, <span class="num">600</span>)
+
+<span class="com"># Показываем окно</span>
+notes_win.show()</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span></span><h3>Интерактив: части окна QWidget</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c6" class="viz-canvas" width="400" height="280"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v6('title')">Показать заголовок</button>
+<button class="viz-btn" onclick="v6('border')">Показать границы</button>
+<button class="viz-btn" onclick="v6('content')">Показать рабочую область</button>
+<button class="viz-btn" onclick="v6('all')">Показать всё</button>
+<button class="viz-btn" onclick="v6r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v6i">Нажмите кнопки, чтобы увидеть разные части окна QWidget.</div>
+</div>
+<div class="text-block">
+<h3>📐 Методы QWidget</h3>
+<ul>
+<li><span class="ic">setWindowTitle(title)</span> — устанавливает текст заголовка окна</li>
+<li><span class="ic">resize(width, height)</span> — устанавливает размер окна</li>
+<li><span class="ic">setGeometry(x, y, width, height)</span> — устанавливает позицию и размер</li>
+<li><span class="ic">show()</span> — отображает окно на экране</li>
+<li><span class="ic">hide()</span> — скрывает окно</li>
+<li><span class="ic">close()</span> — закрывает окно</li>
+<li><span class="ic">setStyleSheet(css)</span> — применяет CSS-стили</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 7 -->
+<section class="slide" data-slide="7">
+<span class="slide-num">СЛАЙД 7 / 27</span>
+<h1 class="slide-title">QLabel — текстовая метка</h1>
+<p class="slide-sub">Отображение текста и изображений</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>️ Назначение QLabel</h3>
+<p><span class="hl">QLabel</span> — виджет для отображения текста или изображений. Используется для:</p>
+<ul>
+<li>Заголовков и подписей</li>
+<li>Отображения информации (статус, счётчик)</li>
+<li>Показа изображений</li>
+<li>Вывода результатов вычислений</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — создание QLabel</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QLabel
+<span class="kw">from</span> PyQt5.QtCore <span class="kw">import</span> Qt
+
+<span class="com"># Создаём метку с текстом</span>
+list_notes_label = QLabel(<span class="str">"Список заметок"</span>)
+
+<span class="com"># Методы QLabel</span>
+list_notes_label.setText(<span class="str">"Новый текст"</span>)
+current_text = list_notes_label.text()
+
+<span class="com"># Выравнивание текста</span>
+list_notes_label.setAlignment(Qt.AlignCenter)
+list_notes_label.setAlignment(Qt.AlignLeft)
+list_notes_label.setAlignment(Qt.AlignRight)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>🏷️</span><h3>Интерактив: изменение текста метки</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c7" class="viz-canvas" width="400" height="180"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v7t('Список заметок')">Текст 1</button>
+<button class="viz-btn" onclick="v7t('Мои задачи')">Текст 2</button>
+<button class="viz-btn" onclick="v7t('Важное!')">Текст 3</button>
+<button class="viz-btn" onclick="v7r()"> Сброс</button>
+</div>
+<div class="viz-info" id="v7i">Нажмите кнопки, чтобы изменить текст метки (как setText() в PyQt5).</div>
+</div>
+<div class="text-block">
+<h3> Основные методы QLabel</h3>
+<ul>
+<li><span class="ic">setText(text)</span> — устанавливает текст метки</li>
+<li><span class="ic">text()</span> — возвращает текущий текст</li>
+<li><span class="ic">setAlignment(alignment)</span> — устанавливает выравнивание</li>
+<li><span class="ic">setPixmap(pixmap)</span> — устанавливает изображение</li>
+<li><span class="ic">clear()</span> — очищает текст</li>
+<li><span class="ic">setStyleSheet(css)</span> — применяет CSS-стили</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 8 -->
+<section class="slide" data-slide="8">
+<span class="slide-num">СЛАЙД 8 / 27</span>
+<h1 class="slide-title">QPushButton — кнопка</h1>
+<p class="slide-sub">Создание интерактивных кнопок</p>
+<div class="slide-content">
+<div class="text-block">
+<h3> Назначение QPushButton</h3>
+<p><span class="hl">QPushButton</span> — это кнопка, которую пользователь может нажать. При нажатии генерируется сигнал <span class="ic">clicked</span>, который можно связать с функцией-обработчиком (слотом).</p>
+<p style="margin-top:12px"><strong>Это ключевая концепция PyQt!</strong> Механизм "сигналы и слоты" позволяет связывать действия пользователя с кодом программы.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — создание кнопки</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QPushButton
+
+<span class="com"># Создаём кнопку с текстом</span>
+button_note_create = QPushButton(<span class="str">"Создать заметку"</span>)
+
+<span class="com"># Методы кнопки</span>
+button_note_create.setText(<span class="str">"Новый текст"</span>)
+button_note_create.resize(<span class="num">200</span>, <span class="num">50</span>)
+
+<span class="com"># Сигналы и слоты — ключевая идея PyQt!</span>
+button_note_create.clicked.connect(on_create_click)
+
+<span class="com"># Функция-обработчик (слот)</span>
+<span class="kw">def</span> <span class="fn">on_create_click</span>():
+    print(<span class="str">"Кнопка нажата!"</span>)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span></span><h3>Интерактив: кнопка с изменением текста</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c8" class="viz-canvas" width="400" height="180"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v8c()">🖱️ Нажать кнопку</button>
+<button class="viz-btn" onclick="v8r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v8i">Нажмите на кнопку, чтобы увидеть, как работает сигнал clicked и слот.</div>
+</div>
+<div class="text-block">
+<h3>🔗 Концепция сигналов и слотов</h3>
+<p>Это <strong>основной механизм</strong> взаимодействия в PyQt5:</p>
+<ol>
+<li><strong>Сигнал</strong> — событие, которое генерирует виджет (клик, изменение текста, фокус)</li>
+<li><strong>Слот</strong> — функция, которая выполняется при получении сигнала</li>
+<li><strong>Связь</strong> — устанавливается через <span class="ic">signal.connect(slot)</span></li>
+</ol>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 9 -->
+<section class="slide" data-slide="9">
+<span class="slide-num">СЛАЙД 9 / 27</span>
+<h1 class="slide-title">QLineEdit — однострочное поле ввода</h1>
+<p class="slide-sub">Ввод текста в одну строку + setEchoMode</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>✏️ Назначение QLineEdit</h3>
+<p><span class="hl">QLineEdit</span> — виджет для ввода текста в одну строку. Используется для:</p>
+<ul>
+<li>Ввода имени, email, пароля</li>
+<li>Поиска и фильтрации</li>
+<li>Ввода чисел и коротких текстов</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — создание QLineEdit</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QLineEdit
+
+<span class="com"># Создаём поле ввода</span>
+field_tag = QLineEdit(<span class="str">""</span>)
+
+<span class="com"># Устанавливаем текст-подсказку (placeholder)</span>
+field_tag.setPlaceholderText(<span class="str">"Введите тег..."</span>)
+
+<span class="com"># Методы QLineEdit</span>
+field_tag.setText(<span class="str">"Новый текст"</span>)
+current_text = field_tag.text()
+field_tag.clear()
+<span class="com">#запрещает пользователю редактировать текст внутри этого поля</span>
+field_tag.setReadOnly(<span class="bi">True</span>)
+
+<span class="com"># Сигналы</span>
+
+<span class="com"># Сигнал textChanged отлавливает изменение текста и передает новый текст в функцию-обработчик.</span>
+field_tag.textChanged.connect(on_text_changed)
+<span class="com"># когда пользователь нажмет клавишу Enter, находясь в поле field_tag, сработает функция on_enter</span>
+field_tag.returnPressed.connect(on_enter)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>🔒 Метод setEchoMode() — режим отображения текста</h3>
+<p>Метод <span class="hl">setEchoMode()</span> управляет тем, <strong>как отображается введённый текст</strong> в поле. Это особенно полезно для полей пароля и конфиденциальных данных.</p>
+<p style="margin-top:12px"><strong>Доступные режимы:</strong></p>
+<ul>
+<li><span class="ic">QLineEdit.Normal</span> — текст отображается как есть (режим по умолчанию)</li>
+<li><span class="ic">QLineEdit.NoEcho</span> — текст не отображается вообще (ничего не видно при вводе)</li>
+<li><span class="ic">QLineEdit.Password</span> — текст заменяется звёздочками (•••••)</li>
+<li><span class="ic">QLineEdit.PasswordEchoOnEdit</span> — текст показывается только во время редактирования, потом заменяется звёздочками</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — примеры setEchoMode</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QLineEdit
+
+<span class="com"># Обычное поле — текст виден</span>
+name_field = QLineEdit()
+name_field.setEchoMode(QLineEdit.Normal)
+<span class="com"># Пользователь вводит "secret" → видно "secret"</span>
+
+<span class="com"># Поле пароля — текст заменяется звёздочками</span>
+password_field = QLineEdit()
+password_field.setEchoMode(QLineEdit.Password)
+<span class="com"># Пользователь вводит "secret" → видно "••••••"</span>
+
+<span class="com"># Ничего не отображается при вводе</span>
+secret_field = QLineEdit()
+secret_field.setEchoMode(QLineEdit.NoEcho)
+<span class="com"># Пользователь вводит "secret" → ничего не видно</span>
+
+<span class="com"># Показывается только во время ввода</span>
+pin_field = QLineEdit()
+pin_field.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+<span class="com"># Пока печатаешь — видно, отпустил клавишу — звёздочки</span></code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>🔒</span><h3>Интерактив: режимы отображения</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c9" class="viz-canvas" width="400" height="220"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v9m('Normal')">Normal</button>
+<button class="viz-btn" onclick="v9m('Password')">Password</button>
+<button class="viz-btn" onclick="v9m('NoEcho')">NoEcho</button>
+<button class="viz-btn" onclick="v9m('PasswordEchoOnEdit')">PasswordEchoOnEdit</button>
+<button class="viz-btn" onclick="v9r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v9i">Переключайте режимы, чтобы увидеть, как setEchoMode() меняет отображение текста.</div>
+</div>
+<div class="text-block">
+<h3> Все методы QLineEdit</h3>
+<ul>
+<li><span class="ic">text()</span> — возвращает введённый текст</li>
+<li><span class="ic">setText(text)</span> — устанавливает текст</li>
+<li><span class="ic">clear()</span> — очищает поле</li>
+<li><span class="ic">setPlaceholderText(text)</span> — устанавливает текст-подсказку</li>
+<li><span class="ic">setReadOnly(bool)</span> — режим только для чтения</li>
+<li><span class="ic">setEchoMode(mode)</span> — режим отображения (Normal, Password, NoEcho, PasswordEchoOnEdit)</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 10 -->
+<section class="slide" data-slide="10">
+<span class="slide-num">СЛАЙД 10 / 27</span>
+<h1 class="slide-title">QTextEdit — многострочное поле + setHtml</h1>
+<p class="slide-sub">Ввод большого текста и HTML-разметка</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📝 Назначение QTextEdit</h3>
+<p><span class="hl">QTextEdit</span> — виджет для ввода и отображения многострочного текста. В отличие от QLineEdit, поддерживает:</p>
+<ul>
+<li>Несколько строк текста</li>
+<li>Прокрутку (скроллинг)</li>
+<li>Форматирование (жирный, курсив, цвет)</li>
+<li>HTML-разметку</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — создание QTextEdit</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QTextEdit
+
+<span class="com"># Создаём многострочное текстовое поле</span>
+field_text = QTextEdit()
+
+<span class="com"># Методы QTextEdit</span>
+field_text.setPlainText(<span class="str">"Текст заметки"</span>)
+content = field_text.toPlainText()
+field_text.append(<span class="str">"Новая строка"</span>)
+field_text.clear()
+
+<span class="com"># Отличие от QLineEdit:</span>
+<span class="com"># QLineEdit — одна строка, метод text()</span>
+<span class="com"># QTextEdit — много строк, метод toPlainText()</span></code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>🌐 Метод setHtml() — установка HTML-текста</h3>
+<p>Метод <span class="hl">setHtml()</span> позволяет установить текст с <strong>HTML-разметкой</strong>. QTextEdit поддерживает ограниченный набор HTML-тегов, что позволяет форматировать текст:</p>
+<ul>
+<li><span class="ic">&lt;b&gt;</span> — жирный текст</li>
+<li><span class="ic">&lt;i&gt;</span> — курсив</li>
+<li><span class="ic">&lt;u&gt;</span> — подчёркнутый</li>
+<li><span class="ic">&lt;font color="red"&gt;</span> — цвет текста</li>
+<li><span class="ic">&lt;br&gt;</span> — перенос строки</li>
+<li><span class="ic">&lt;h1&gt;, &lt;h2&gt;</span> — заголовки</li>
+<li><span class="ic">&lt;ul&gt;, &lt;li&gt;</span> — списки</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — примеры setHtml</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># Простой HTML с форматированием</span>
+field_text.setHtml(<span class="str">"&lt;b&gt;Жирный текст&lt;/b&gt; и &lt;i&gt;курсив&lt;/i&gt;"</span>)
+
+<span class="com"># HTML с цветом и заголовком</span>
+field_text.setHtml(<span class="str">"""
+    &lt;h2 style="color: #4ec9b0;"&gt;Заголовок заметки&lt;/h2&gt;
+    &lt;p&gt;Обычный текст заметки.&lt;/p&gt;
+    &lt;p style="color: red;"&gt;Важное предупреждение!&lt;/p&gt;
+    &lt;ul&gt;
+        &lt;li&gt;Первый пункт&lt;/li&gt;
+        &lt;li&gt;Второй пункт&lt;/li&gt;
+    &lt;/ul&gt;
+"""</span>)
+
+<span class="com"># HTML с изображением (локальный файл)</span>
+field_text.setHtml(<span class="str">'&lt;img src="image.png" width="200"&gt;'</span>)
+
+<span class="com"># Получить HTML-содержимое обратно</span>
+html_content = field_text.toHtml()
+
+<span class="com"># Разница между методами:</span>
+<span class="com"># setPlainText() — устанавливает обычный текст (без форматирования)</span>
+<span class="com"># setHtml() — устанавливает текст с HTML-разметкой</span>
+<span class="com"># toPlainText() — получает текст без HTML-тегов</span>
+<span class="com"># toHtml() — получает текст с HTML-тегами</span></code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>📝</span><h3>Интерактив: многострочное поле</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c10" class="viz-canvas" width="400" height="220"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v10a()">Добавить текст</button>
+<button class="viz-btn" onclick="v10h()">Показать HTML</button>
+<button class="viz-btn" onclick="v10c()">Очистить</button>
+</div>
+<div class="viz-info" id="v10i">Нажмите кнопки, чтобы увидеть работу методов QTextEdit.</div>
+</div>
+<div class="text-block">
+<h3>📋 Основные методы QTextEdit</h3>
+<ul>
+<li><span class="ic">toPlainText()</span> — возвращает весь текст как строку</li>
+<li><span class="ic">setPlainText(text)</span> — устанавливает текст</li>
+<li><span class="ic">append(text)</span> — добавляет строку в конец</li>
+<li><span class="ic">clear()</span> — очищает поле</li>
+<li><span class="ic">toHtml()</span> — возвращает текст с HTML-разметкой</li>
+<li><span class="ic">setHtml(html)</span> — устанавливает HTML-текст</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 11 -->
+<section class="slide" data-slide="11">
+<span class="slide-num">СЛАЙД 11 / 27</span>
+<h1 class="slide-title">QListWidget — список элементов</h1>
+<p class="slide-sub">Отображение и управление списками</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📋 Назначение QListWidget</h3>
+<p><span class="hl">QListWidget</span> — виджет для отображения списка элементов. Используется для:</p>
+<ul>
+<li>Списков задач, заметок, файлов</li>
+<li>Меню выбора</li>
+<li>Отображения результатов поиска</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — создание QListWidget</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QListWidget
+
+<span class="com"># Создаём список</span>
+list_notes = QListWidget()
+
+<span class="com"># Добавляем элементы</span>
+list_notes.addItem(<span class="str">"Первая заметка"</span>)
+list_notes.addItems([<span class="str">"Вторая"</span>, <span class="str">"Третья"</span>])
+
+<span class="com"># Методы списка</span>
+list_notes.clear()
+count = list_notes.count()
+selected = list_notes.selectedItems()
+
+<span class="com"># Получить текст выбранного элемента</span>
+<span class="kw">if</span> selected:
+    note_name = selected[<span class="num">0</span>].text()
+    print(<span class="str">"Выбрано:"</span>, note_name)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>📋</span><h3>Интерактив: список элементов</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c11" class="viz-canvas" width="400" height="240"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v11a()">Добавить элемент</button>
+<button class="viz-btn" onclick="v11r2()">Удалить выбранный</button>
+<button class="viz-btn" onclick="v11c()">Очистить список</button>
+</div>
+<div class="viz-info" id="v11i">Добавляйте и удаляйте элементы списка, как в PyQt5.</div>
+</div>
+<div class="text-block">
+<h3>📋 Основные методы QListWidget</h3>
+<ul>
+<li><span class="ic">addItem(text)</span> — добавляет элемент</li>
+<li><span class="ic">addItems(list)</span> — добавляет несколько элементов</li>
+<li><span class="ic">clear()</span> — очищает список</li>
+<li><span class="ic">count()</span> — возвращает количество элементов</li>
+<li><span class="ic">selectedItems()</span> — возвращает список выбранных элементов</li>
+<li><span class="ic">currentItem()</span> — возвращает текущий выбранный элемент</li>
+<li><span class="ic">item(row)</span> — возвращает элемент по индексу</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 12 -->
+<section class="slide" data-slide="12">
+<span class="slide-num">СЛАЙД 12 / 27</span>
+<h1 class="slide-title">QInputDialog — диалоговое окно</h1>
+<p class="slide-sub">Получение данных от пользователя + getItem</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>💬 Назначение QInputDialog</h3>
+<p><span class="hl">QInputDialog</span> — это модальное диалоговое окно для получения данных от пользователя. Используется для:</p>
+<ul>
+<li>Ввода текста (название, имя)</li>
+<li>Ввода чисел (возраст, количество)</li>
+<li>Выбора из списка</li>
+</ul>
+<p style="margin-top:12px"><strong>Важно:</strong> Модальное окно блокирует основное окно, пока пользователь не закроет диалог.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — QInputDialog.getText()</span><button class="copy-btn" onclick="copyCode(this)"> Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QInputDialog
+
+<span class="com"># Диалог ввода текста</span>
+note_name, ok = QInputDialog.getText(
+    notes_win,
+    <span class="str">"Добавить заметку"</span>,
+    <span class="str">"Название заметки: "</span>
+)
+
+<span class="kw">if</span> ok <span class="kw">and</span> note_name:
+    print(<span class="str">"Создана заметка:"</span>, note_name)
+<span class="kw">else</span>:
+    print(<span class="str">"Отменено"</span>)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>📋 Метод getItem() — выбор из списка</h3>
+<p>Метод <span class="hl">QInputDialog.getItem()</span> показывает диалог со <strong>списком вариантов</strong>, из которых пользователь может выбрать один. Это удобно, когда нужно предложить пользователю готовый набор опций.</p>
+<p style="margin-top:12px"><strong>Параметры:</strong></p>
+<ul>
+<li><span class="ic">parent</span> — родительское окно</li>
+<li><span class="ic">title</span> — заголовок диалога</li>
+<li><span class="ic">label</span> — текст-подсказка</li>
+<li><span class="ic">items</span> — список вариантов (список строк)</li>
+<li><span class="ic">current</span> — индекс выбранного по умолчанию элемента (необязательно)</li>
+<li><span class="ic">editable</span> — можно ли редактировать список (необязательно)</li>
+</ul>
+<p style="margin-top:12px"><strong>Возвращает:</strong> кортеж <span class="ic">(выбранная_строка, ok)</span></p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — QInputDialog.getItem()</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QInputDialog
+
+<span class="com"># Список вариантов для выбора</span>
+categories = [<span class="str">"Работа"</span>, <span class="str">"Личное"</span>, <span class="str">"Учёба"</span>, <span class="str">"Покупки"</span>]
+
+<span class="com"># Открываем диалог выбора из списка</span>
+<span class="com"># Параметры: родитель, заголовок, метка, список, индекс по умолчанию</span>
+category, ok = QInputDialog.getItem(
+    notes_win,
+    <span class="str">"Выберите категорию"</span>,
+    <span class="str">"Категория заметки:"</span>,
+    categories,     <span class="com"># список вариантов</span>
+    <span class="num">0</span>,              <span class="com"># индекс по умолчанию (0 = "Работа")</span>
+    <span class="bi">False</span>           <span class="com"># False = нельзя редактировать список</span>
+)
+
+<span class="kw">if</span> ok <span class="kw">and</span> category:
+    print(<span class="str">"Выбрана категория:"</span>, category)
+<span class="kw">else</span>:
+    print(<span class="str">"Выбор отменён"</span>)
+
+<span class="com"># Другие методы QInputDialog:</span>
+<span class="com"># QInputDialog.getInt() — ввод целого числа</span>
+<span class="com"># QInputDialog.getDouble() — ввод дробного числа</span>
+<span class="com"># QInputDialog.getText() — ввод текста</span></code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>💬</span><h3>Интерактив: диалоговое окно</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c12" class="viz-canvas" width="400" height="240"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v12d()">Открыть диалог</button>
+<button class="viz-btn" onclick="v12r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v12i">Нажмите "Открыть диалог", чтобы увидеть модальное окно ввода.</div>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 13 -->
+<section class="slide" data-slide="13">
+<span class="slide-num">СЛАЙД 13 / 27</span>
+<h1 class="slide-title">Зачем нужны Layouts</h1>
+<p class="slide-sub">Автоматическое расположение виджетов</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📐 Проблема абсолютного позиционирования</h3>
+<p>Можно размещать виджеты по координатам <span class="ic">(x, y)</span>:</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — абсолютное позиционирование (плохо)</span><button class="copy-btn" onclick="copyCode(this)"> Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># Плохой подход — абсолютные координаты</span>
+button1.move(<span class="num">50</span>, <span class="num">100</span>)
+button2.move(<span class="num">200</span>, <span class="num">100</span>)
+button3.move(<span class="num">50</span>, <span class="num">150</span>)
+
+<span class="com"># Проблемы:</span>
+<span class="com"># 1. При изменении размера окна виджеты не двигаются</span>
+<span class="com"># 2. На разных экранах выглядит по-разному</span>
+<span class="com"># 3. Сложно поддерживать код</span></code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>✅ Решение: Layouts</h3>
+<p><span class="hl">Layouts</span> (менеджеры компоновки) автоматически располагают виджеты:</p>
+<ul>
+<li>При изменении размера окна виджеты автоматически подстраиваются</li>
+<li>Код становится чище и понятнее</li>
+<li>Работает на всех экранах и разрешениях</li>
+</ul>
+</div>
+<div class="grid">
+<div class="card"><div class="icon"></div><h4>QVBoxLayout</h4><p>Располагает виджеты вертикально (сверху вниз).</p></div>
+<div class="card"><div class="icon"></div><h4>QHBoxLayout</h4><p>Располагает виджеты горизонтально (слева направо).</p></div>
+<div class="card"><div class="icon"></div><h4>QGridLayout</h4><p>Располагает виджеты в виде сетки (строки и столбцы).</p></div>
+<div class="card"><div class="icon">📋</div><h4>QFormLayout</h4><p>Для форм с метками и полями ввода (пары ключ-значение).</p></div>
+</div>
+<div class="text-block">
+<h3> Преимущества Layouts</h3>
+<ol>
+<li><strong>Адаптивность:</strong> виджеты автоматически подстраиваются под размер окна</li>
+<li><strong>Простота:</strong> не нужно вычислять координаты</li>
+<li><strong>Поддержка:</strong> легко добавлять и удалять виджеты</li>
+<li><strong>Кроссплатформенность:</strong> одинаково выглядит на всех ОС</li>
+</ol>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 14 -->
+<section class="slide" data-slide="14">
+<span class="slide-num">СЛАЙД 14 / 27</span>
+<h1 class="slide-title">QVBoxLayout — вертикальное расположение</h1>
+<p class="slide-sub">Виджеты сверху вниз</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📊 Назначение QVBoxLayout</h3>
+<p><span class="hl">QVBoxLayout</span> располагает виджеты <strong>вертикально</strong> — сверху вниз. Каждый новый виджет добавляется под предыдущим.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — QVBoxLayout</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QVBoxLayout, QPushButton, QLabel
+
+<span class="com"># Создаём вертикальный layout</span>
+col_1 = QVBoxLayout()
+
+<span class="com"># Добавляем виджеты (сверху вниз)</span>
+col_1.addWidget(QLabel(<span class="str">"Заголовок"</span>))
+col_1.addWidget(field_text)
+col_1.addWidget(button_save)
+
+<span class="com"># Устанавливаем layout для окна</span>
+window.setLayout(col_1)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span></span><h3>Интерактив: вертикальный layout</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c14" class="viz-canvas" width="400" height="280"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v14a()">Добавить виджет</button>
+<button class="viz-btn" onclick="v14r2()">Удалить последний</button>
+<button class="viz-btn" onclick="v14r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v14i">Добавляйте виджеты, чтобы увидеть, как они располагаются вертикально.</div>
+</div>
+<div class="text-block">
+<h3>📋 Основные методы QVBoxLayout</h3>
+<ul>
+<li><span class="ic">addWidget(widget)</span> — добавляет виджет в конец</li>
+<li><span class="ic">addWidget(widget, stretch)</span> — добавляет с коэффициентом растяжения</li>
+<li><span class="ic">addLayout(layout)</span> — вкладывает другой layout</li>
+<li><span class="ic">removeWidget(widget)</span> — удаляет виджет</li>
+<li><span class="ic">setSpacing(pixels)</span> — устанавливает отступы между виджетами</li>
+<li><span class="ic">setContentsMargins(l, t, r, b)</span> — устанавливает отступы по краям</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 15 -->
+<section class="slide" data-slide="15">
+<span class="slide-num">СЛАЙД 15 / 27</span>
+<h1 class="slide-title">QHBoxLayout — горизонтальное расположение</h1>
+<p class="slide-sub">Виджеты слева направо</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📈 Назначение QHBoxLayout</h3>
+<p><span class="hl">QHBoxLayout</span> располагает виджеты <strong>горизонтально</strong> — слева направо. Каждый новый виджет добавляется справа от предыдущего.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — QHBoxLayout</span><button class="copy-btn" onclick="copyCode(this)"> Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QHBoxLayout, QPushButton
+
+<span class="com"># Создаём горизонтальный layout</span>
+row_1 = QHBoxLayout()
+
+<span class="com"># Добавляем виджеты (слева направо)</span>
+row_1.addWidget(button_note_create)
+row_1.addWidget(button_note_save)
+row_1.addWidget(button_note_delete)
+
+<span class="com"># Устанавливаем layout для окна или другого layout</span>
+window.setLayout(row_1)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>📈</span><h3>Интерактив: горизонтальный layout</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c15" class="viz-canvas" width="400" height="200"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v15a()">Добавить виджет</button>
+<button class="viz-btn" onclick="v15r2()">Удалить последний</button>
+<button class="viz-btn" onclick="v15r()"> Сброс</button>
+</div>
+<div class="viz-info" id="v15i">Добавляйте виджеты, чтобы увидеть, как они располагаются горизонтально.</div>
+</div>
+<div class="text-block">
+<h3>📋 Основные методы QHBoxLayout</h3>
+<p>Те же, что и у QVBoxLayout:</p>
+<ul>
+<li><span class="ic">addWidget(widget)</span> — добавляет виджет справа</li>
+<li><span class="ic">addWidget(widget, stretch)</span> — добавляет с коэффициентом растяжения</li>
+<li><span class="ic">addStretch()</span> — добавляет "пружину" (пустое пространство)</li>
+<li><span class="ic">addSpacing(pixels)</span> — добавляет фиксированный отступ</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 16 -->
+<section class="slide" data-slide="16">
+<span class="slide-num">СЛАЙД 16 / 27</span>
+<h1 class="slide-title">QGridLayout — сетка виджетов</h1>
+<p class="slide-sub">Расположение в виде таблицы (строки и столбцы)</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>⊞ Назначение QGridLayout</h3>
+<p><span class="hl">QGridLayout</span> располагает виджеты в виде <strong>сетки</strong> — как таблица со строками и столбцами. Каждый виджет размещается в определённой ячейке по координатам <span class="ic">(строка, столбец)</span>.</p>
+<p style="margin-top:12px"><strong>Когда использовать:</strong></p>
+<ul>
+<li>Калькуляторы (кнопки в виде сетки)</li>
+<li>Формы с несколькими полями ввода</li>
+<li>Галереи изображений</li>
+<li>Любой интерфейс, где нужна табличная структура</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — QGridLayout</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QGridLayout, QPushButton, QLabel
+
+<span class="com"># Создаём сетку</span>
+grid = QGridLayout()
+
+<span class="com"># Добавляем виджеты по координатам (строка, столбец)</span>
+<span class="com"># Метод: addWidget(widget, row, column)</span>
+grid.addWidget(QLabel(<span class="str">"Имя:"</span>), <span class="num">0</span>, <span class="num">0</span>)        <span class="com"># строка 0, столбец 0</span>
+grid.addWidget(name_input, <span class="num">0</span>, <span class="num">1</span>)            <span class="com"># строка 0, столбец 1</span>
+grid.addWidget(QLabel(<span class="str">"Email:"</span>), <span class="num">1</span>, <span class="num">0</span>)      <span class="com"># строка 1, столбец 0</span>
+grid.addWidget(email_input, <span class="num">1</span>, <span class="num">1</span>)           <span class="com"># строка 1, столбец 1</span>
+
+<span class="com"># Виджет может занимать несколько ячеек</span>
+<span class="com"># addWidget(widget, row, column, rowSpan, columnSpan)</span>
+grid.addWidget(big_button, <span class="num">2</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>)     <span class="com"># занимает 1 строку и 2 столбца</span>
+
+window.setLayout(grid)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>📐 Параметры addWidget()</h3>
+<p><strong>Базовый синтаксис:</strong> <span class="ic">addWidget(widget, row, column)</span></p>
+<ul>
+<li><span class="ic">widget</span> — виджет для добавления</li>
+<li><span class="ic">row</span> — номер строки (начинается с 0)</li>
+<li><span class="ic">column</span> — номер столбца (начинается с 0)</li>
+</ul>
+<p style="margin-top:12px"><strong>Расширенный синтаксис:</strong> <span class="ic">addWidget(widget, row, column, rowSpan, columnSpan)</span></p>
+<ul>
+<li><span class="ic">rowSpan</span> — сколько строк занимает виджет</li>
+<li><span class="ic">columnSpan</span> — сколько столбцов занимает виджет</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — пример: калькулятор</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QGridLayout, QPushButton
+
+grid = QGridLayout()
+
+<span class="com"># Кнопки калькулятора в виде сетки 4x4</span>
+buttons = [
+    [<span class="str">"7"</span>, <span class="str">"8"</span>, <span class="str">"9"</span>, <span class="str">"/"</span>],
+    [<span class="str">"4"</span>, <span class="str">"5"</span>, <span class="str">"6"</span>, <span class="str">"*"</span>],
+    [<span class="str">"1"</span>, <span class="str">"2"</span>, <span class="str">"3"</span>, <span class="str">"-"</span>],
+    [<span class="str">"0"</span>, <span class="str">"."</span>, <span class="str">"="</span>, <span class="str">"+"</span>]
+]
+
+<span class="kw">for</span> row <span class="kw">in</span> range(<span class="num">4</span>):
+    <span class="kw">for</span> col <span class="kw">in</span> range(<span class="num">4</span>):
+        btn = QPushButton(buttons[row][col])
+        grid.addWidget(btn, row, col)
+
+window.setLayout(grid)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>⊞</span><h3>Интерактив: сетка виджетов</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c16" class="viz-canvas" width="400" height="260"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v16add()">Добавить в сетку</button>
+<button class="viz-btn" onclick="v16r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v16i">Добавляйте виджеты в сетку, чтобы увидеть, как работает QGridLayout.</div>
+</div>
+<div class="text-block">
+<h3>📋 Основные методы QGridLayout</h3>
+<ul>
+<li><span class="ic">addWidget(widget, row, column)</span> — добавляет виджет в ячейку</li>
+<li><span class="ic">addWidget(widget, row, column, rowSpan, columnSpan)</span> — виджет на несколько ячеек</li>
+<li><span class="ic">setSpacing(pixels)</span> — отступы между ячейками</li>
+<li><span class="ic">setColumnStretch(column, stretch)</span> — коэффициент растяжения столбца</li>
+<li><span class="ic">setRowStretch(row, stretch)</span> — коэффициент растяжения строки</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 17 -->
+<section class="slide" data-slide="17">
+<span class="slide-num">СЛАЙД 17 / 27</span>
+<h1 class="slide-title">QFormLayout — формы с метками</h1>
+<p class="slide-sub">Пары "метка — поле ввода"</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📋 Назначение QFormLayout</h3>
+<p><span class="hl">QFormLayout</span> — это специальный layout для создания <strong>форм</strong>. Он автоматически располагает виджеты в виде пар <strong>"метка — поле ввода"</strong>:</p>
+<ul>
+<li>Слева — метка (QLabel)</li>
+<li>Справа — поле ввода (QLineEdit, QTextEdit и т.д.)</li>
+</ul>
+<p style="margin-top:12px"><strong>Когда использовать:</strong></p>
+<ul>
+<li>Формы регистрации и входа</li>
+<li>Настройки приложения</li>
+<li>Анкеты и опросы</li>
+<li>Любой интерфейс с парами "вопрос — ответ"</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — QFormLayout</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QFormLayout, QLineEdit, QPushButton
+
+<span class="com"># Создаём форм-лейаут</span>
+form = QFormLayout()
+
+<span class="com"># Добавляем пары "метка — поле"</span>
+<span class="com"># Метод: addRow(label, field)</span>
+form.addRow(<span class="str">"Имя:"</span>, QLineEdit())
+form.addRow(<span class="str">"Email:"</span>, QLineEdit())
+form.addRow(<span class="str">"Телефон:"</span>, QLineEdit())
+form.addRow(<span class="str">"Пароль:"</span>, QLineEdit())
+
+<span class="com"># Можно добавить только поле (без метки)</span>
+form.addRow(QPushButton(<span class="str">"Отправить"</span>))
+
+<span class="com"># Можно добавить только метку (как заголовок секции)</span>
+form.addRow(<span class="str">"Дополнительная информация:"</span>)
+
+window.setLayout(form)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>📐 Методы QFormLayout</h3>
+<ul>
+<li><span class="ic">addRow(label, field)</span> — добавляет пару "метка — поле"</li>
+<li><span class="ic">addRow(widget)</span> — добавляет только виджет (занимает всю строку)</li>
+<li><span class="ic">addRow(label)</span> — добавляет только метку (как заголовок секции)</li>
+<li><span class="ic">insertRow(row, label, field)</span> — вставляет строку по индексу</li>
+<li><span class="ic">removeRow(row)</span> — удаляет строку по индексу</li>
+<li><span class="ic">setRowWrapPolicy(policy)</span> — политика переноса длинных меток</li>
+<li><span class="ic">setLabelAlignment(alignment)</span> — выравнивание меток</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — пример: форма регистрации</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> (QFormLayout, QLineEdit,
+    QComboBox, QDateEdit, QPushButton)
+
+form = QFormLayout()
+
+<span class="com"># Основные поля</span>
+form.addRow(<span class="str">"Имя:"</span>, QLineEdit())
+form.addRow(<span class="str">"Фамилия:"</span>, QLineEdit())
+form.addRow(<span class="str">"Email:"</span>, QLineEdit())
+
+<span class="com"># Выпадающий список</span>
+gender = QComboBox()
+gender.addItems([<span class="str">"Мужской"</span>, <span class="str">"Женский"</span>, <span class="str">"Другой"</span>])
+form.addRow(<span class="str">"Пол:"</span>, gender)
+
+<span class="com"># Дата рождения</span>
+form.addRow(<span class="str">"Дата рождения:"</span>, QDateEdit())
+
+<span class="com"># Разделитель (только метка)</span>
+form.addRow(<span class="str">"Контактная информация:"</span>)
+form.addRow(<span class="str">"Телефон:"</span>, QLineEdit())
+form.addRow(<span class="str">"Адрес:"</span>, QLineEdit())
+
+<span class="com"># Кнопка отправки (занимает всю строку)</span>
+form.addRow(QPushButton(<span class="str">"Зарегистрироваться"</span>))
+
+window.setLayout(form)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>📋</span><h3>Интерактив: форма с метками</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c17" class="viz-canvas" width="400" height="280"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v17add()">Добавить поле</button>
+<button class="viz-btn" onclick="v17r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v17i">Добавляйте поля формы, чтобы увидеть, как работает QFormLayout.</div>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 18 -->
+<section class="slide" data-slide="18">
+<span class="slide-num">СЛАЙД 18 / 27</span>
+<h1 class="slide-title">Вложенные Layouts и параметр stretch</h1>
+<p class="slide-sub">Создание сложных интерфейсов с пропорциями</p>
+<div class="slide-content">
+<div class="text-block">
+<h3> Вложение Layouts</h3>
+<p>Layouts можно вкладывать друг в друга для создания сложных интерфейсов. В приложении "Умные заметки" используется такая структура:</p>
+<ul>
+<li>Главный layout (горизонтальный): <span class="ic">layout_notes</span></li>
+<li>Левая колонка (вертикальный): <span class="ic">col_1</span> — текстовое поле</li>
+<li>Правая колонка (вертикальный): <span class="ic">col_2</span> — список заметок, теги, кнопки</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — вложенные layouts из кода приложения</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QHBoxLayout, QVBoxLayout
+
+<span class="com"># Создаём главный горизонтальный layout</span>
+layout_notes = QHBoxLayout()
+
+<span class="com"># Создаём левую колонку (вертикальный layout)</span>
+col_1 = QVBoxLayout()
+col_1.addWidget(field_text)
+
+<span class="com"># Создаём правую колонку (вертикальный layout)</span>
+col_2 = QVBoxLayout()
+col_2.addWidget(list_notes_label)
+col_2.addWidget(list_notes)
+row_1 = QHBoxLayout()
+row_1.addWidget(button_note_create)
+row_1.addWidget(button_note_del)
+col_2.addLayout(row_1)
+row_2 = QHBoxLayout()
+row_2.addWidget(button_note_save)
+col_2.addLayout(row_2)
+col_2.addWidget(list_tags_label)
+col_2.addWidget(list_tags)
+col_2.addWidget(field_tag)
+row_3 = QHBoxLayout()
+row_3.addWidget(button_tag_add)
+row_3.addWidget(button_tag_del)
+col_2.addLayout(row_3)
+row_4 = QHBoxLayout()
+row_4.addWidget(button_tag_search)
+col_2.addLayout(row_4)
+
+<span class="com"># Вкладываем колонки в главный layout</span>
+<span class="com"># stretch=2 и stretch=1 — пропорции 2:1</span>
+layout_notes.addLayout(col_1, stretch=<span class="num">2</span>)
+layout_notes.addLayout(col_2, stretch=<span class="num">1</span>)
+
+<span class="com"># Устанавливаем главный layout для окна</span>
+notes_win.setLayout(layout_notes)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>📐 Параметр stretch — пропорции</h3>
+<p>Параметр <span class="hl">stretch</span> определяет <strong>пропорции</strong>, в которых layout'ы делят доступное пространство:</p>
+<ul>
+<li><span class="ic">stretch=2</span> и <span class="ic">stretch=1</span> — первый layout занимает 2/3, второй 1/3</li>
+<li><span class="ic">stretch=1</span> и <span class="ic">stretch=1</span> — равные доли (50/50)</li>
+<li><span class="ic">stretch=3</span> и <span class="ic">stretch=1</span> — первый занимает 3/4, второй 1/4</li>
+</ul>
+<p style="margin-top:12px"><strong>Формула:</strong> доля = stretch_i / сумма_всех_stretch</p>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>🔀</span><h3>Интерактив: вложенные layouts с stretch</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c18" class="viz-canvas" width="400" height="260"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v18s(1,1)">stretch 1:1</button>
+<button class="viz-btn" onclick="v18s(2,1)">stretch 2:1</button>
+<button class="viz-btn" onclick="v18s(3,1)">stretch 3:1</button>
+<button class="viz-btn" onclick="v18r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v18i">Изменяйте пропорции stretch, чтобы увидеть, как меняется распределение пространства.</div>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 19 -->
+<section class="slide" data-slide="19">
+<span class="slide-num">СЛАЙД 19 / 27</span>
+<h1 class="slide-title">Стилизация: setStyleSheet и псевдоклассы</h1>
+<p class="slide-sub">CSS-стили и интерактивные состояния</p>
+<div class="slide-content">
+<div class="text-block">
+<h3> Метод setStyleSheet()</h3>
+<p><span class="hl">setStyleSheet()</span> — метод, который позволяет применять CSS-стили к виджетам. Синтаксис похож на CSS в веб-разработке.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — изменение фона окна</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># Изменяем цвет фона окна</span>
+notes_win.setStyleSheet(<span class="str">"background-color: #2b2b2b;"</span>)
+
+<span class="com"># Можно задать несколько свойств сразу</span>
+notes_win.setStyleSheet(<span class="str">"""
+    QWidget {
+        background-color: #2b2b2b;
+        color: white;
+    }
+"""</span>)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>✨ Псевдоклассы для интерактивности</h3>
+<p>Псевдоклассы позволяют задавать разные стили для <strong>разных состояний</strong> виджета:</p>
+<ul>
+<li><span class="ic">:hover</span> — стиль при наведении мыши на виджет</li>
+<li><span class="ic">:pressed</span> — стиль в момент нажатия (кнопка "вжата")</li>
+<li><span class="ic">:focus</span> — стиль когда виджет в фокусе (активен для ввода)</li>
+<li><span class="ic">:disabled</span> — стиль когда виджет неактивен</li>
+<li><span class="ic">:checked</span> — стиль для отмеченных чекбоксов</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — стилизация кнопки с псевдоклассами</span><button class="copy-btn" onclick="copyCode(this)"> Копировать</button></div>
+<div class="code-body">
+<pre><code>button_note_create.setStyleSheet(<span class="str">"""
+    QPushButton {
+        background-color: #4ec9b0;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+    QPushButton:hover {
+        background-color: #3da895;
+    }
+    QPushButton:pressed {
+        background-color: #2d8a78;
+    }
+"""</span>)</code></pre>
+</div>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — стилизация поля ввода с :focus</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code>field_tag.setStyleSheet(<span class="str">"""
+    QLineEdit {
+        background-color: #3c3c3c;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 8px;
+        font-size: 13px;
+    }
+    QLineEdit:focus {
+        border: 2px solid #4ec9b0;
+        background-color: #454545;
+    }
+    QLineEdit:hover {
+        border: 1px solid #4ec9b0;
+    }
+"""</span>)</code></pre>
+</div>
+</div>
+<div class="viz-box">
+<div class="viz-head"><span>✨</span><h3>Интерактив: стилизованная кнопка</h3></div>
+<div class="viz-canvas-wrap"><canvas id="c19" class="viz-canvas" width="400" height="200"></canvas></div>
+<div class="viz-controls">
+<button class="viz-btn" onclick="v19s('normal')">Обычное</button>
+<button class="viz-btn" onclick="v19s('hover')">:hover</button>
+<button class="viz-btn" onclick="v19s('pressed')">:pressed</button>
+<button class="viz-btn" onclick="v19r()">🔄 Сброс</button>
+</div>
+<div class="viz-info" id="v19i">Переключайте состояния кнопки, чтобы увидеть, как работают псевдоклассы.</div>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 20 -->
+<section class="slide" data-slide="20">
+<span class="slide-num">СЛАЙД 20 / 27</span>
+<h1 class="slide-title">app.setStyleSheet() — стили для всего приложения</h1>
+<p class="slide-sub">Глобальная стилизация всех виджетов</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🌍 Глобальная стилизация</h3>
+<p>Метод <span class="hl">app.setStyleSheet()</span> применяет CSS-стили <strong>ко всему приложению сразу</strong>. Это удобно, когда нужно задать единый стиль для всех виджетов одного типа.</p>
+<p style="margin-top:12px"><strong>Преимущества:</strong></p>
+<ul>
+<li>Не нужно стилизовать каждый виджет отдельно</li>
+<li>Единый стиль для всего приложения</li>
+<li>Легко менять тему оформления</li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — стили для всего приложения</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QApplication
+
+app = QApplication([])
+
+<span class="com"># Применяем стили ко всему приложению</span>
+app.setStyleSheet(<span class="str">"""
+    /* Стили для всех кнопок приложения */
+    QPushButton {
+        background-color: #4ec9b0;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    QPushButton:hover {
+        background-color: #3da895;
+    }
+    QPushButton:pressed {
+        background-color: #2d8a78;
+    }
+    
+    /* Стили для всех полей ввода */
+    QLineEdit {
+        background-color: #3c3c3c;
+        color: white;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 6px;
+    }
+    QLineEdit:focus {
+        border: 2px solid #4ec9b0;
+    }
+    
+    /* Стили для всех текстовых полей */
+    QTextEdit {
+        background-color: #2d2d2d;
+        color: #d4d4d4;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 8px;
+    }
+    
+    /* Стили для всех списков */
+    QListWidget {
+        background-color: #2d2d2d;
+        color: #d4d4d4;
+        border: 1px solid #555;
+        border-radius: 4px;
+    }
+    QListWidget::item:selected {
+        background-color: #4ec9b0;
+        color: white;
+    }
+    QListWidget::item:hover {
+        background-color: #3e3e42;
+    }
+    
+    /* Стили для всего окна */
+    QWidget {
+        background-color: #2b2b2b;
+        color: #d4d4d4;
+    }
+"""</span>)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3> Разбор селекторов</h3>
+<ul>
+<li><span class="ic">QPushButton</span> — стиль применяется ко всем кнопкам</li>
+<li><span class="ic">QPushButton:hover</span> — стиль при наведении на любую кнопку</li>
+<li><span class="ic">QListWidget::item:selected</span> — стиль для выбранного элемента списка</li>
+<li><span class="ic">QListWidget::item:hover</span> — стиль при наведении на элемент списка</li>
+<li><span class="ic">QWidget</span> — стиль для всех виджетов (базовый)</li>
+</ul>
+<p style="margin-top:12px"><strong>Важно:</strong> Стили, заданные через <span class="ic">app.setStyleSheet()</span>, применяются ко всем виджетам, если у них нет собственных стилей через <span class="ic">widget.setStyleSheet()</span>.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — приоритет стилей</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># 1. Глобальный стиль для всех кнопок</span>
+app.setStyleSheet(<span class="str">"QPushButton { background-color: blue; }"</span>)
+
+<span class="com"># 2. Стиль для конкретной кнопки (перекрывает глобальный)</span>
+special_button.setStyleSheet(<span class="str">"QPushButton { background-color: red; }"</span>)
+
+<span class="com"># Результат:</span>
+<span class="com"># - Все кнопки синие (из app.setStyleSheet)</span>
+<span class="com"># - special_button — красная (свой стиль приоритетнее)</span></code></pre>
+</div>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 21 -->
+<section class="slide" data-slide="21">
+<span class="slide-num">СЛАЙД 21 / 27</span>
+<h1 class="slide-title">Изображения и видео в PyQt5</h1>
+<p class="slide-sub">QPixmap, QLabel и QMediaPlayer</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🖼️ Отображение изображений</h3>
+<p>Для работы с изображениями в PyQt5 используются классы <span class="hl">QPixmap</span> и <span class="hl">QLabel</span>:</p>
+<ul>
+<li><strong>QPixmap</strong> — хранит изображение в памяти</li>
+<li><strong>QLabel</strong> — отображает изображение на экране через метод <span class="ic">setPixmap()</span></li>
+</ul>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — отображение изображения</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QLabel
+<span class="kw">from</span> PyQt5.QtGui <span class="kw">import</span> QPixmap
+
+<span class="com"># Создаём метку для изображения</span>
+image_label = QLabel()
+
+<span class="com"># Загружаем изображение из файла</span>
+pixmap = QPixmap(<span class="str">"photo.jpg"</span>)
+
+<span class="com"># Проверяем, что изображение загрузилось</span>
+<span class="kw">if</span> <span class="kw">not</span> pixmap.isNull():
+    <span class="com"># Масштабируем изображение под размер метки</span>
+    scaled_pixmap = pixmap.scaled(
+        <span class="num">400</span>, <span class="num">300</span>,                    <span class="com"># ширина и высота</span>
+        Qt.KeepAspectRatio,         <span class="com"># сохраняем пропорции</span>
+        Qt.SmoothTransformation     <span class="com"># плавное масштабирование</span>
+    )
+    image_label.setPixmap(scaled_pixmap)
+<span class="kw">else</span>:
+    image_label.setText(<span class="str">"Не удалось загрузить изображение"</span>)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>🎬 Воспроизведение видео</h3>
+<p>Для работы с видео в PyQt5 используется модуль <span class="hl">QtMultimedia</span>. Он предоставляет классы <span class="ic">QMediaPlayer</span> и <span class="ic">QVideoWidget</span>:</p>
+<ul>
+<li><strong>QMediaPlayer</strong> — управляет воспроизведением (загрузка, play, pause, stop)</li>
+<li><strong>QVideoWidget</strong> — виджет для отображения видео</li>
+</ul>
+<p style="margin-top:12px"><strong>Важно:</strong> Для работы с видео нужно установить дополнительные пакеты:</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Команда установки</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body"><pre><code>pip install PyQt5-multimedia</code></pre></div>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — воспроизведение видео</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QApplication, QWidget, QVBoxLayout
+<span class="kw">from</span> PyQt5.QtMultimedia <span class="kw">import</span> QMediaPlayer, QMediaContent
+<span class="kw">from</span> PyQt5.QtMultimediaWidgets <span class="kw">import</span> QVideoWidget
+<span class="kw">from</span> PyQt5.QtCore <span class="kw">import</span> QUrl
+
+app = QApplication([])
+
+window = QWidget()
+window.setWindowTitle(<span class="str">"Видеоплеер"</span>)
+window.resize(<span class="num">640</span>, <span class="num">480</span>)
+
+<span class="com"># Создаём виджет для отображения видео</span>
+video_widget = QVideoWidget()
+
+<span class="com"># Создаём медиаплеер</span>
+player = QMediaPlayer()
+player.setVideoOutput(video_widget)
+
+<span class="com"># Загружаем видеофайл</span>
+player.setMedia(QMediaContent(QUrl.fromLocalFile(<span class="str">"video.mp4"</span>)))
+
+<span class="com"># Создаём layout и добавляем виджет</span>
+layout = QVBoxLayout()
+layout.addWidget(video_widget)
+window.setLayout(layout)
+
+window.show()
+
+<span class="com"># Запускаем воспроизведение</span>
+player.play()
+
+app.exec_()</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3> Методы QMediaPlayer</h3>
+<ul>
+<li><span class="ic">setMedia(QMediaContent)</span> — загружает медиафайл</li>
+<li><span class="ic">play()</span> — запускает воспроизведение</li>
+<li><span class="ic">pause()</span> — ставит на паузу</li>
+<li><span class="ic">stop()</span> — останавливает воспроизведение</li>
+<li><span class="ic">setVolume(level)</span> — устанавливает громкость (0-100)</li>
+<li><span class="ic">setPosition(ms)</span> — перематывает на указанную позицию (в миллисекундах)</li>
+<li><span class="ic">duration()</span> — возвращает длительность медиафайла</li>
+<li><span class="ic">position()</span> — возвращает текущую позицию воспроизведения</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 22 -->
+<section class="slide" data-slide="22">
+<span class="slide-num">СЛАЙД 22 / 27</span>
+<h1 class="slide-title">Разбор функции add_note()</h1>
+<p class="slide-sub">Как работает добавление заметки</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📝 Полный код функции</h3>
+<p>Функция <span class="ic">add_note()</span> создаёт новую заметку через диалоговое окно и добавляет её в список.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — функция add_note()</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">def</span> <span class="fn">add_note</span>():
+    <span class="com"># 1. Открываем диалоговое окно для ввода названия</span>
+    note_name, ok = QInputDialog.getText(
+        notes_win,
+        <span class="str">"Добавить заметку"</span>,
+        <span class="str">"Название заметки: "</span>
+    )
+    
+    <span class="com"># 2. Проверяем, нажал ли пользователь OK и ввёл ли текст</span>
+    <span class="kw">if</span> ok <span class="kw">and</span> note_name != <span class="str">""</span>:
+        <span class="com"># 3. Добавляем заметку в словарь (хранилище данных)</span>
+        notes[note_name] = {<span class="str">"текст"</span>: <span class="str">""</span>, <span class="str">"теги"</span>: []}
+        
+        <span class="com"># 4. Добавляем элемент в список (визуальное отображение)</span>
+        list_notes.addItem(note_name)
+        list_tags.addItems(notes[note_name][<span class="str">"теги"</span>])
+        
+        print(notes)</code></pre>
+</div>
+</div>
+<div class="flow">
+<h3 style="color:var(--accent);margin-bottom:10px">📋 Пошаговое выполнение</h3>
+<div class="flow-step"><div class="sn">1</div><div><div class="st">Открывается диалоговое окно</div><div class="sc">QInputDialog.getText()</div></div></div>
+<div class="flow-arrow">↓</div>
+<div class="flow-step"><div class="sn">2</div><div><div class="st">Пользователь вводит название и нажимает OK</div><div class="sc">note_name = "Моя заметка", ok = True</div></div></div>
+<div class="flow-arrow">↓</div>
+<div class="flow-step"><div class="sn">3</div><div><div class="st">Заметка добавляется в словарь с пустым текстом и тегами</div><div class="sc">notes["Моя заметка"] = {"текст": "", "теги": []}</div></div></div>
+<div class="flow-arrow">↓</div>
+<div class="flow-step"><div class="sn">4</div><div><div class="st">Элемент добавляется в список (интерфейс)</div><div class="sc">list_notes.addItem("Моя заметка")</div></div></div>
+</div>
+<div class="text-block">
+<h3>🔑 Ключевые моменты</h3>
+<ul>
+<li><strong>Структура данных:</strong> каждая заметка — словарь с ключами "текст" и "теги"</li>
+<li><strong>Проверка ok:</strong> важно проверять, нажал ли пользователь OK, а не Отмена</li>
+<li><strong>Проверка note_name != "":</strong> убеждаемся, что текст не пустой</li>
+<li><strong>Два действия:</strong> обновляем и данные (словарь), и интерфейс (список)</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 23 -->
+<section class="slide" data-slide="23">
+<span class="slide-num">СЛАЙД 23 / 27</span>
+<h1 class="slide-title">Разбор функций show_note() и save_note()</h1>
+<p class="slide-sub">Отображение и сохранение заметки</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📖 Функция show_note()</h3>
+<p>Отображает текст выбранной заметки в текстовом поле и показывает её теги.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — функция show_note()</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">def</span> <span class="fn">show_note</span>():
+    <span class="com"># Получаем текст из заметки с выделенным названием</span>
+    key = list_notes.selectedItems()[<span class="num">0</span>].text()
+    print(key)
+    
+    <span class="com"># Отображаем текст заметки в поле редактирования</span>
+    field_text.setText(notes[key][<span class="str">"текст"</span>])
+    
+    <span class="com"># Очищаем список тегов и загружаем теги заметки</span>
+    list_tags.clear()
+    list_tags.addItems(notes[key][<span class="str">"теги"</span>])</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3> Функция save_note()</h3>
+<p>Сохраняет текст заметки в словарь и записывает все данные в файл JSON.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — функция save_note()</span><button class="copy-btn" onclick="copyCode(this)"> Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">def</span> <span class="fn">save_note</span>():
+    <span class="kw">if</span> list_notes.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        notes[key][<span class="str">"текст"</span>] = field_text.toPlainText()
+        
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+        print(notes)
+    <span class="kw">else</span>:
+        print(<span class="str">"Заметка для сохранения не выбрана!"</span>)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>🔍 Разбор ключевых строк</h3>
+<p><strong>Строка:</strong> <span class="ic">key = list_notes.selectedItems()[0].text()</span></p>
+<ul>
+<li><span class="ic">selectedItems()</span> возвращает список выбранных элементов</li>
+<li><span class="ic">[0]</span> — берём первый выбранный элемент</li>
+<li><span class="ic">.text()</span> — получаем текст элемента (название заметки)</li>
+</ul>
+<p style="margin-top:12px"><strong>Строка:</strong> <span class="ic">field_text.setText(notes[key]["текст"])</span></p>
+<ul>
+<li>Получаем текст заметки из словаря по ключу</li>
+<li>Устанавливаем его в текстовое поле через <span class="ic">setText()</span></li>
+</ul>
+<p style="margin-top:12px"><strong>Строка:</strong> <span class="ic">json.dump(notes, file, sort_keys=True, ensure_ascii=False)</span></p>
+<ul>
+<li><span class="ic">sort_keys=True</span> — сортирует ключи в JSON по алфавиту</li>
+<li><span class="ic">ensure_ascii=False</span> — сохраняет кириллицу без экранирования</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 24 -->
+<section class="slide" data-slide="24">
+<span class="slide-num">СЛАЙД 24 / 27</span>
+<h1 class="slide-title">Разбор функций del_note() и работы с тегами</h1>
+<p class="slide-sub">Удаление заметок и управление тегами</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🗑️ Функция del_note()</h3>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — функция del_note()</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">def</span> <span class="fn">del_note</span>():
+    <span class="kw">if</span> list_notes.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        <span class="kw">del</span> notes[key]
+        list_notes.clear()
+        list_tags.clear()
+        field_text.clear()
+        list_notes.addItems(notes)
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+        print(notes)
+    <span class="kw">else</span>:
+        print(<span class="str">"Заметка для удаления не выбрана!"</span>)</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>🏷️ Функции работы с тегами</h3>
+<p>Теги позволяют категоризировать заметки и искать их по категориям.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — функции add_tag(), del_tag(), search_tag()</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">def</span> <span class="fn">add_tag</span>():
+    <span class="kw">if</span> list_notes.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        tag = field_tag.text()
+        <span class="kw">if not</span> tag <span class="kw">in</span> notes[key][<span class="str">"теги"</span>]:
+            notes[key][<span class="str">"теги"</span>].append(tag)
+            list_tags.addItem(tag)
+            field_tag.clear()
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+        print(notes)
+    <span class="kw">else</span>:
+        print(<span class="str">"Заметка для добавления тега не выбрана!"</span>)
+
+
+<span class="kw">def</span> <span class="fn">del_tag</span>():
+    <span class="kw">if</span> list_tags.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        tag = list_tags.selectedItems()[<span class="num">0</span>].text()
+        notes[key][<span class="str">"теги"</span>].remove(tag)
+        list_tags.clear()
+        list_tags.addItems(notes[key][<span class="str">"теги"</span>])
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+    <span class="kw">else</span>:
+        print(<span class="str">"Тег для удаления не выбран!"</span>)
+
+
+<span class="kw">def</span> <span class="fn">search_tag</span>():
+    print(button_tag_search.text())
+    tag = field_tag.text()
+    <span class="kw">if</span> button_tag_search.text() == <span class="str">"Искать заметки по тегу"</span> <span class="kw">and</span> tag:
+        print(tag)
+        notes_filtered = {}
+        <span class="kw">for</span> note <span class="kw">in</span> notes:
+            <span class="kw">if</span> tag <span class="kw">in</span> notes[note][<span class="str">"теги"</span>]:
+                notes_filtered[note] = notes[note]
+        button_tag_search.setText(<span class="str">"Сбросить поиск"</span>)
+        list_notes.clear()
+        list_tags.clear()
+        list_notes.addItems(notes_filtered)
+        print(button_tag_search.text())
+    <span class="kw">elif</span> button_tag_search.text() == <span class="str">"Сбросить поиск"</span>:
+        field_tag.clear()
+        list_notes.clear()
+        list_tags.clear()
+        list_notes.addItems(notes)
+        button_tag_search.setText(<span class="str">"Искать заметки по тегу"</span>)
+        print(button_tag_search.text())
+    <span class="kw">else</span>:
+        <span class="kw">pass</span></code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>🔑 Ключевые моменты работы с тегами</h3>
+<ul>
+<li><strong>add_tag():</strong> добавляет тег к заметке, если его ещё нет (проверка через <span class="ic">if not tag in ...</span>)</li>
+<li><strong>del_tag():</strong> удаляет выбранный тег из списка тегов заметки</li>
+<li><strong>search_tag():</strong> фильтрует заметки по тегу и переключает кнопку между режимами "Искать" и "Сбросить поиск"</li>
+<li><strong>Хранение:</strong> теги хранятся в списке внутри словаря заметки: <span class="ic">{"текст": "...", "теги": [...]}</span></li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 25 -->
+<section class="slide" data-slide="25">
+<span class="slide-num">СЛАЙД 25 / 27</span>
+<h1 class="slide-title">Полный код приложения "Умные заметки"</h1>
+<p class="slide-sub">Весь код приложения в одном месте</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>📄 Полный исходный код</h3>
+<p>Ниже представлен полный код приложения "Умные заметки", который мы разбирали на предыдущих слайдах. Этот код можно скопировать и запустить — приложение будет работать.</p>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Python — полный код приложения</span><button class="copy-btn" onclick="copyCode(this)"> Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="kw">from</span> PyQt5.QtCore <span class="kw">import</span> Qt
+<span class="kw">from</span> PyQt5.QtWidgets <span class="kw">import</span> QApplication, QWidget, QPushButton, QLabel, QListWidget, QLineEdit, QTextEdit, QInputDialog, QHBoxLayout, QVBoxLayout, QFormLayout
+
+<span class="kw">import</span> json
+
+app = QApplication([])
+
+<span class="str">'''Интерфейс приложения'''</span>
+<span class="com">#параметры окна приложения</span>
+notes_win = QWidget()
+notes_win.setWindowTitle(<span class="str">'Умные заметки'</span>)
+notes_win.resize(<span class="num">900</span>, <span class="num">600</span>)
+
+<span class="com">#виджеты окна приложения</span>
+list_notes = QListWidget()
+list_notes_label = QLabel(<span class="str">'Список заметок'</span>)
+
+button_note_create = QPushButton(<span class="str">'Создать заметку'</span>)
+button_note_del = QPushButton(<span class="str">'Удалить заметку'</span>)
+button_note_save = QPushButton(<span class="str">'Сохранить заметку'</span>)
+
+field_tag = QLineEdit(<span class="str">''</span>)
+field_tag.setPlaceholderText(<span class="str">'Введите тег...'</span>)
+field_text = QTextEdit()
+button_tag_add = QPushButton(<span class="str">'Добавить к заметке'</span>)
+button_tag_del = QPushButton(<span class="str">'Открепить от заметки'</span>)
+button_tag_search = QPushButton(<span class="str">'Искать заметки по тегу'</span>)
+list_tags = QListWidget()
+list_tags_label = QLabel(<span class="str">'Список тегов'</span>)
+
+<span class="com">#расположение виджетов по лэйаутам</span>
+layout_notes = QHBoxLayout()
+col_1 = QVBoxLayout()
+col_1.addWidget(field_text)
+
+col_2 = QVBoxLayout()
+col_2.addWidget(list_notes_label)
+col_2.addWidget(list_notes)
+row_1 = QHBoxLayout()
+row_1.addWidget(button_note_create)
+row_1.addWidget(button_note_del)
+row_2 = QHBoxLayout()
+row_2.addWidget(button_note_save)
+col_2.addLayout(row_1)
+col_2.addLayout(row_2)
+
+col_2.addWidget(list_tags_label)
+col_2.addWidget(list_tags)
+col_2.addWidget(field_tag)
+row_3 = QHBoxLayout()
+row_3.addWidget(button_tag_add)
+row_3.addWidget(button_tag_del)
+row_4 = QHBoxLayout()
+row_4.addWidget(button_tag_search)
+
+col_2.addLayout(row_3)
+col_2.addLayout(row_4)
+
+layout_notes.addLayout(col_1, stretch=<span class="num">2</span>)
+layout_notes.addLayout(col_2, stretch=<span class="num">1</span>)
+notes_win.setLayout(layout_notes)
+
+<span class="str">'''Функционал приложения'''</span>
+
+<span class="str">'''Работа с текстом заметки'''</span>
+<span class="kw">def</span> <span class="fn">add_note</span>():
+    note_name, ok = QInputDialog.getText(notes_win, <span class="str">"Добавить заметку"</span>, <span class="str">"Название заметки: "</span>)
+    <span class="kw">if</span> ok <span class="kw">and</span> note_name != <span class="str">""</span>:
+        notes[note_name] = {<span class="str">"текст"</span>: <span class="str">""</span>, <span class="str">"теги"</span>: []}
+        list_notes.addItem(note_name)
+        list_tags.addItems(notes[note_name][<span class="str">"теги"</span>])
+        print(notes)
+
+<span class="kw">def</span> <span class="fn">show_note</span>():
+    key = list_notes.selectedItems()[<span class="num">0</span>].text()
+    print(key)
+    field_text.setText(notes[key][<span class="str">"текст"</span>])
+    list_tags.clear()
+    list_tags.addItems(notes[key][<span class="str">"теги"</span>])
+
+<span class="kw">def</span> <span class="fn">save_note</span>():
+    <span class="kw">if</span> list_notes.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        notes[key][<span class="str">"текст"</span>] = field_text.toPlainText()
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+        print(notes)
+    <span class="kw">else</span>:
+        print(<span class="str">"Заметка для сохранения не выбрана!"</span>)
+
+<span class="kw">def</span> <span class="fn">del_note</span>():
+    <span class="kw">if</span> list_notes.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        <span class="kw">del</span> notes[key]
+        list_notes.clear()
+        list_tags.clear()
+        field_text.clear()
+        list_notes.addItems(notes)
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+        print(notes)
+    <span class="kw">else</span>:
+        print(<span class="str">"Заметка для удаления не выбрана!"</span>)
+
+<span class="str">'''Работа с тегами заметки'''</span>
+<span class="kw">def</span> <span class="fn">add_tag</span>():
+    <span class="kw">if</span> list_notes.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        tag = field_tag.text()
+        <span class="kw">if not</span> tag <span class="kw">in</span> notes[key][<span class="str">"теги"</span>]:
+            notes[key][<span class="str">"теги"</span>].append(tag)
+            list_tags.addItem(tag)
+            field_tag.clear()
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+        print(notes)
+    <span class="kw">else</span>:
+        print(<span class="str">"Заметка для добавления тега не выбрана!"</span>)
+
+<span class="kw">def</span> <span class="fn">del_tag</span>():
+    <span class="kw">if</span> list_tags.selectedItems():
+        key = list_notes.selectedItems()[<span class="num">0</span>].text()
+        tag = list_tags.selectedItems()[<span class="num">0</span>].text()
+        notes[key][<span class="str">"теги"</span>].remove(tag)
+        list_tags.clear()
+        list_tags.addItems(notes[key][<span class="str">"теги"</span>])
+        <span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"w"</span>) <span class="kw">as</span> file:
+            json.dump(notes, file, sort_keys=<span class="bi">True</span>, ensure_ascii=<span class="bi">False</span>)
+    <span class="kw">else</span>:
+        print(<span class="str">"Тег для удаления не выбран!"</span>)
+
+<span class="kw">def</span> <span class="fn">search_tag</span>():
+    print(button_tag_search.text())
+    tag = field_tag.text()
+    <span class="kw">if</span> button_tag_search.text() == <span class="str">"Искать заметки по тегу"</span> <span class="kw">and</span> tag:
+        print(tag)
+        notes_filtered = {}
+        <span class="kw">for</span> note <span class="kw">in</span> notes:
+            <span class="kw">if</span> tag <span class="kw">in</span> notes[note][<span class="str">"теги"</span>]:
+                notes_filtered[note]=notes[note]
+        button_tag_search.setText(<span class="str">"Сбросить поиск"</span>)
+        list_notes.clear()
+        list_tags.clear()
+        list_notes.addItems(notes_filtered)
+        print(button_tag_search.text())
+    <span class="kw">elif</span> button_tag_search.text() == <span class="str">"Сбросить поиск"</span>:
+        field_tag.clear()
+        list_notes.clear()
+        list_tags.clear()
+        list_notes.addItems(notes)
+        button_tag_search.setText(<span class="str">"Искать заметки по тегу"</span>)
+        print(button_tag_search.text())
+    <span class="kw">else</span>:
+        <span class="kw">pass</span>
+
+<span class="str">'''Запуск приложения'''</span>
+<span class="com">#подключение обработки событий</span>
+button_note_create.clicked.connect(add_note)
+list_notes.itemClicked.connect(show_note)
+button_note_save.clicked.connect(save_note)
+button_note_del.clicked.connect(del_note)
+button_tag_add.clicked.connect(add_tag)
+button_tag_del.clicked.connect(del_tag)
+button_tag_search.clicked.connect(search_tag)
+
+<span class="com">#запуск приложения</span>
+notes_win.show()
+
+<span class="kw">with</span> open(<span class="str">"notes_data.json"</span>, <span class="str">"r"</span>) <span class="kw">as</span> file:
+    notes = json.load(file)
+list_notes.addItems(notes)
+
+app.exec_()</code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3> Структура кода</h3>
+<ol>
+<li><strong>Импорт модулей</strong> — PyQt5 и json</li>
+<li><strong>Создание приложения</strong> — <span class="ic">app = QApplication([])</span></li>
+<li><strong>Интерфейс</strong> — создание виджетов и layout'ов</li>
+<li><strong>Функционал</strong> — функции работы с заметками и тегами</li>
+<li><strong>Подключение сигналов</strong> — связывание кнопок с функциями</li>
+<li><strong>Запуск</strong> — показ окна и загрузка данных</li>
+</ol>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 26 -->
+<section class="slide" data-slide="26">
+<span class="slide-num">СЛАЙД 26 / 27</span>
+<h1 class="slide-title">Отладка и типичные ошибки</h1>
+<p class="slide-sub">Как решать распространённые проблемы</p>
+<div class="slide-content">
+<div class="text-block">
+<h3>🐛 Типичные ошибки новичков</h3>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Ошибка 1: забыли app.exec_()</span><button class="copy-btn" onclick="copyCode(this)"> Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># ❌ Неправильно — окно появится и сразу закроется</span>
+notes_win.show()
+
+<span class="com"># ✅ Правильно — запускаем цикл событий</span>
+notes_win.show()
+app.exec_()</code></pre>
+</div>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Ошибка 2: забыли создать QApplication</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># ❌ Неправильно — нет объекта приложения</span>
+window = QWidget()
+window.show()
+
+<span class="com"># ✅ Правильно — сначала создаём app</span>
+app = QApplication([])
+window = QWidget()
+window.show()
+app.exec_()</code></pre>
+</div>
+</div>
+<div class="code-box">
+<div class="code-head"><span class="code-label">Ошибка 3: exec() вместо exec_()</span><button class="copy-btn" onclick="copyCode(this)">📋 Копировать</button></div>
+<div class="code-body">
+<pre><code><span class="com"># ❌ В PyQt5 это ошибка</span>
+app.exec()
+
+<span class="com"># ✅ Правильно для PyQt5</span>
+app.exec_()
+
+<span class="com"># В PyQt6 можно использовать exec()</span></code></pre>
+</div>
+</div>
+<div class="text-block">
+<h3>🔍 Инструменты отладки</h3>
+<ul>
+<li><strong>print()</strong> — простой вывод в консоль для проверки значений</li>
+<li><strong>QMessageBox</strong> — вывод сообщений прямо в интерфейсе</li>
+<li><strong>try/except</strong> — перехват исключений</li>
+<li><strong>logging</strong> — модуль Python для профессионального логирования</li>
+</ul>
+</div>
+<div class="text-block">
+<h3>💡 Советы по отладке</h3>
+<ol>
+<li>Всегда создавайте <span class="ic">QApplication</span> перед виджетами</li>
+<li>Используйте <span class="ic">print()</span> для проверки значений переменных</li>
+<li>Читайте сообщения об ошибках — они обычно указывают на проблему</li>
+<li>Проверяйте документацию PyQt5 на riverbankcomputing.com</li>
+<li>Используйте IDE с автодополнением (PyCharm, VS Code)</li>
+</ol>
+</div>
+</div>
+</section>
+
+<!-- СЛАЙД 27 -->
+<section class="slide" data-slide="27">
+<span class="slide-num">СЛАЙД 27 / 27</span>
+<h1 class="slide-title">Итоги и следующие шаги</h1>
+<p class="slide-sub">Краткое резюме пройденного пути</p>
+<div class="slide-content">
+<div class="text-block" style="border-left:3px solid var(--accent)">
+<h3>✅ Что вы изучили</h3>
+<p>Вы прошли полный путь от установки PyQt5 до создания полноценного приложения "Умные заметки":</p>
+</div>
+<div class="grid">
+<div class="card"><div class="icon">1️⃣</div><h4>Основы</h4><p>Установка, структура приложения, объектная модель</p></div>
+<div class="card"><div class="icon">2️⃣</div><h4>Виджеты</h4><p>QWidget, QLabel, QPushButton, QLineEdit, QTextEdit, QListWidget</p></div>
+<div class="card"><div class="icon">3️⃣</div><h4>Диалоги</h4><p>QInputDialog с методами getText() и getItem()</p></div>
+<div class="card"><div class="icon">4️⃣</div><h4>Сигналы и слоты</h4><p>Механизм связи между виджетами и функциями</p></div>
+<div class="card"><div class="icon">5️</div><h4>Layouts</h4><p>QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, stretch</p></div>
+<div class="card"><div class="icon">6️⃣</div><h4>Стилизация</h4><p>CSS, псевдоклассы :hover, :pressed, :focus, app.setStyleSheet()</p></div>
+<div class="card"><div class="icon">7️⃣</div><h4>Медиа</h4><p>Изображения (QPixmap) и видео (QMediaPlayer)</p></div>
+<div class="card"><div class="icon">8️⃣</div><h4>Данные</h4><p>Сохранение и загрузка через JSON</p></div>
+</div>
+<div class="text-block">
+<h3>🚀 Следующие шаги</h3>
+<p>Теперь, когда вы знаете основы, вы можете:</p>
+<ol>
+<li><strong>Доработать приложение "Умные заметки":</strong>
+<ul>
+<li>Добавить стилизацию через app.setStyleSheet()</li>
+<li>Добавить иконки к кнопкам</li>
+<li>Реализовать поиск по тексту заметок</li>
+<li>Добавить дату создания заметки</li>
+</ul>
+</li>
+<li><strong>Создать новое приложение</strong> — калькулятор, текстовый редактор, игру</li>
+<li><strong>Изучить продвинутые темы:</strong>
+<ul>
+<li>Многопоточность (QThread) для долгих операций</li>
+<li>Графика и анимация (QPainter, QGraphicsView)</li>
+<li>Работа с базами данных (QtSql)</li>
+<li>Сетевое программирование (QtNetwork)</li>
+<li>Создание собственных виджетов</li>
+</ul>
+</li>
+<li><strong>Читать документацию</strong> — doc.qt.io/qt-5</li>
+<li><strong>Изучить PyQt6</strong> — новая версия с улучшениями</li>
+</ol>
+</div>
+<div class="text-block">
+<h3>📚 Полезные ресурсы</h3>
+<ul>
+<li><strong>Официальная документация Qt:</strong> doc.qt.io/qt-5</li>
+<li><strong>Документация PyQt5:</strong> riverbankcomputing.com/static/Docs/PyQt5</li>
+<li><strong>Книга:</strong> "Rapid GUI Programming with Python and Qt" by Mark Summerfield</li>
+<li><strong>Видеоуроки:</strong> YouTube каналы по PyQt5</li>
+<li><strong>Сообщество:</strong> Stack Overflow, Reddit r/PyQt</li>
+</ul>
+</div>
+<div class="text-block" style="background:linear-gradient(135deg,var(--bg2),var(--bg3));border:2px solid var(--accent)">
+<h3> Поздравляем!</h3>
+<p style="font-size:1.1rem;color:var(--accent);font-weight:500">Вы изучили основы PyQt5 и создали приложение "Умные заметки"!</p>
+<p style="margin-top:12px">Помните: лучший способ учиться — это практиковаться. Начните с простого приложения и постепенно добавляйте новые функции.</p>
+<p style="margin-top:12px;color:var(--text2)">Удачи в разработке! </p>
+</div>
+</div>
+</section>
+
+</main>
+
+<nav class="nav">
+<button class="nav-btn" id="btnPrev" onclick="changeSlide(-1)" disabled>← Назад</button>
+<div class="nav-dots" id="navDots"></div>
+<button class="nav-btn primary" id="btnNext" onclick="changeSlide(1)">Далее →</button>
+</nav>
+
+<div class="kbd-hint"><span class="kbd">←</span> <span class="kbd">→</span> навигация</div>
+
+<script>
+let cur=1,total=27;
+function initNav(){const dc=document.getElementById('navDots');for(let i=1;i<=total;i++){const d=document.createElement('div');d.className='nav-dot'+(i===1?' active':'');d.onclick=(function(n){return function(){goSlide(n);};})(i);d.title='Слайд '+i;dc.appendChild(d);}updateNav();}
+function changeSlide(d){const n=cur+d;if(n<1||n>total)return;goSlide(n);}
+function goSlide(n){if(n<1||n>total)return;document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active'));const t=document.querySelector('[data-slide="'+n+'"]');if(t)t.classList.add('active');cur=n;updateNav();window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>initSlideCanvases(n),100);}
+function updateNav(){const p=document.getElementById('btnPrev'),nx=document.getElementById('btnNext');if(p)p.disabled=cur===1;if(nx)nx.disabled=cur===total;document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i+1===cur));const pr=(cur/total)*100;const f=document.getElementById('pFill'),t=document.getElementById('pText');if(f)f.style.width=pr+'%';if(t)t.textContent='Слайд '+cur+' из '+total;}
+document.addEventListener('keydown',function(e){if(e.target.tagName==='BUTTON'||e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;if(e.key==='ArrowRight'||e.key==='PageDown'){e.preventDefault();changeSlide(1);}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();changeSlide(-1);}});
+function copyCode(btn){const cb=btn.closest('.code-box');if(!cb)return;const ce=cb.querySelector('code');if(!ce)return;const code=ce.textContent;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(()=>showCopied(btn)).catch(()=>fallbackCopy(code,btn));}else{fallbackCopy(code,btn);}}
+function fallbackCopy(text,btn){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showCopied(btn);}catch(e){alert('Не удалось скопировать');}document.body.removeChild(ta);}
+function showCopied(btn){const ot=btn.innerHTML;btn.innerHTML='✓ Скопировано';btn.classList.add('copied');setTimeout(()=>{btn.innerHTML=ot;btn.classList.remove('copied');},2000);}
+function getCanvas(id){const c=document.getElementById(id);if(!c)return null;return{canvas:c,ctx:c.getContext('2d')};}
+function clearC(c,color){if(!c)return;c.ctx.fillStyle=color||'#1a1a2e';c.ctx.fillRect(0,0,c.canvas.width,c.canvas.height);}
+function drawT(c,text,x,y,color,size,bold){if(!c)return;c.ctx.fillStyle=color||'#d4d4d4';c.ctx.font=(bold?'bold ':'')+(size||14)+'px Consolas, monospace';c.ctx.fillText(text,x,y);}
+function updateVizInfo(id,text){const el=document.getElementById(id);if(el)el.textContent=text;}
+
+function initSlideCanvases(num){try{if(num===6)initC6();if(num===7)initC7();if(num===8)initC8();if(num===9)initC9();if(num===10)initC10();if(num===11)initC11();if(num===12)initC12();if(num===14)initC14();if(num===15)initC15();if(num===16)initC16();if(num===17)initC17();if(num===18)initC18();if(num===19)initC19();}catch(e){console.error('Canvas error slide '+num+':',e);}}
+
+// Slide 6: QWidget
+let v6s={};
+function initC6(){const c=getCanvas('c6');if(!c)return;v6s={};drawW6(c,{});updateVizInfo('v6i','Нажмите кнопки, чтобы увидеть разные части окна QWidget.');}
+function drawW6(c,s){clearC(c,'#1a1a2e');const x=50,y=30,w=300,h=220;c.ctx.fillStyle='#2d2d30';c.ctx.fillRect(x,y,w,h);if(s.border){c.ctx.strokeStyle='#4ec9b0';c.ctx.lineWidth=3;c.ctx.strokeRect(x,y,w,h);drawT(c,'Границы окна',x+10,y+h+20,'#4ec9b0',12);}if(s.title){c.ctx.fillStyle='#3e3e42';c.ctx.fillRect(x,y,w,28);drawT(c,'Умные заметки',x+10,y+19,'#d4d4d4',12);c.ctx.fillStyle='#f48771';c.ctx.beginPath();c.ctx.arc(x+w-15,y+14,6,0,Math.PI*2);c.ctx.fill();drawT(c,'Заголовок окна',x+10,y+h+20,'#4ec9b0',12);}if(s.content){c.ctx.fillStyle='#1e1e1e';c.ctx.fillRect(x+10,y+40,w-20,h-50);drawT(c,'Рабочая область',x+20,y+70,'#858585',12);drawT(c,'(здесь размещаются виджеты)',x+20,y+90,'#858585',11);drawT(c,'Рабочая область',x+10,y+h+20,'#4ec9b0',12);}if(!s.title&&!s.border&&!s.content){drawT(c,'Нажмите кнопки выше',x+70,y+h/2,'#858585',14);}}
+function v6(p){const c=getCanvas('c6');if(!c)return;if(p==='all')v6s={title:true,border:true,content:true};else{v6s={};v6s[p]=true;}drawW6(c,v6s);const lb={title:'Заголовок окна (setWindowTitle)',border:'Границы окна (resize, setGeometry)',content:'Рабочая область (для виджетов)',all:'Все части окна QWidget'};updateVizInfo('v6i','Показано: '+(lb[p]||p));}
+function v6r(){initC6();}
+
+// Slide 7: QLabel
+let v7t='QLabel';
+function initC7(){const c=getCanvas('c7');if(!c)return;v7t='QLabel';drawL7(c);updateVizInfo('v7i','Нажмите кнопки, чтобы изменить текст метки (как setText() в PyQt5).');}
+function drawL7(c){clearC(c,'#1a1a2e');c.ctx.fillStyle='#2d2d30';c.ctx.fillRect(50,60,300,60);c.ctx.strokeStyle='#4ec9b0';c.ctx.lineWidth=1;c.ctx.strokeRect(50,60,300,60);c.ctx.fillStyle='#d4d4d4';c.ctx.font='bold 18px Consolas, monospace';c.ctx.textAlign='center';c.ctx.fillText(v7t,200,98);c.ctx.textAlign='left';}
+function v7t2(t){v7t=t;const c=getCanvas('c7');if(c)drawL7(c);updateVizInfo('v7i','setText("'+t+'") — текст метки изменён.');}
+function v7r(){initC7();}
+
+// Slide 8: QPushButton
+let v8c=0;
+function initC8(){const c=getCanvas('c8');if(!c)return;v8c=0;drawB8(c,'Нажми меня','#4ec9b0');updateVizInfo('v8i','Нажмите на кнопку, чтобы увидеть, как работает сигнал clicked и слот.');}
+function drawB8(c,text,color){clearC(c,'#1a1a2e');c.ctx.fillStyle=color;c.ctx.fillRect(120,70,160,50);c.ctx.fillStyle='#000';c.ctx.font='bold 14px sans-serif';c.ctx.textAlign='center';c.ctx.fillText(text,200,100);c.ctx.textAlign='left';if(v8c>0){drawT(c,'Кликов: '+v8c,140,150,'#4ec9b0',13);}}
+function v8c2(){v8c++;const c=getCanvas('c8');if(!c)return;const ts=['Нажми меня','Ещё раз!','И ещё!','Продолжай!','Отлично!'];drawB8(c,ts[v8c%ts.length],'#3da895');updateVizInfo('v8i','Сигнал clicked → слот вызван! Текст кнопки изменён через setText(). Кликов: '+v8c);}
+function v8r(){initC8();}
+
+// Slide 9: QLineEdit setEchoMode
+let v9m='Normal';
+function initC9(){const c=getCanvas('c9');if(!c)return;v9m='Normal';drawE9(c);updateVizInfo('v9i','Переключайте режимы, чтобы увидеть, как setEchoMode() меняет отображение текста.');}
+function drawE9(c){clearC(c,'#1a1a2e');c.ctx.fillStyle='#2d2d30';c.ctx.fillRect(50,50,300,40);c.ctx.strokeStyle='#4ec9b0';c.ctx.lineWidth=1;c.ctx.strokeRect(50,50,300,40);const secret='secret';let display=secret;let modeLabel='Normal — текст виден как есть';if(v9m==='Password'){display='••••••';modeLabel='Password — текст заменяется звёздочками';}else if(v9m==='NoEcho'){display='';modeLabel='NoEcho — текст не отображается';}else if(v9m==='PasswordEchoOnEdit'){display='••••••';modeLabel='PasswordEchoOnEdit — звёздочки после ввода';}drawT(c,display,60,75,'#d4d4d4',14);drawT(c,'setEchoMode(QLineEdit.'+v9m+')',50,120,'#4ec9b0',12,true);drawT(c,modeLabel,50,145,'#858585',11);drawT(c,'Введено: "'+secret+'"',50,170,'#ce9178',11);drawT(c,'Отображается: "'+display+'"',50,190,'#ce9178',11);}
+function v9m2(m){v9m=m;const c=getCanvas('c9');if(c)drawE9(c);updateVizInfo('v9i','setEchoMode(QLineEdit.'+m+') — режим отображения изменён.');}
+function v9r(){initC9();}
+
+// Slide 10: QTextEdit
+let v10l=[];
+function initC10(){const c=getCanvas('c10');if(!c)return;v10l=[];drawTE10(c);updateVizInfo('v10i','Нажмите кнопки, чтобы увидеть работу методов QTextEdit.');}
+function drawTE10(c){clearC(c,'#1a1a2e');c.ctx.fillStyle='#2d2d2d';c.ctx.fillRect(40,30,320,140);c.ctx.strokeStyle='#555';c.ctx.strokeRect(40,30,320,140);if(v10l.length===0){drawT(c,'(пустое поле)',60,100,'#858585',12);}else{v10l.forEach((l,i)=>drawT(c,l,50,55+i*20,'#d4d4d4',12));}}
+function v10a(){const c=getCanvas('c10');if(!c)return;const ss=['Первая строка','Вторая строка','Третья строка','Четвёртая строка','Пятая строка'];v10l.push(ss[v10l.length%ss.length]);drawTE10(c);updateVizInfo('v10i','append() добавил строку. Всего строк: '+v10l.length);}
+function v10h(){const c=getCanvas('c10');if(!c)return;drawTE10(c);const html='<b>'+v10l.join('</b><br><b>')+'</b>';updateVizInfo('v10i','toHtml() вернул HTML: "'+html.substring(0,80)+'..."');}
+function v10c(){v10l=[];const c=getCanvas('c10');if(c)drawTE10(c);updateVizInfo('v10i','clear() — поле очищено.');}
+
+// Slide 11: QListWidget
+let v11i=['Первая заметка','Вторая заметка','Третья заметка'];let v11s=-1;
+function initC11(){const c=getCanvas('c11');if(!c)return;v11i=['Первая заметка','Вторая заметка','Третья заметка'];v11s=-1;drawL11(c);updateVizInfo('v11i','Добавляйте и удаляйте элементы списка, как в PyQt5.');}
+function drawL11(c){clearC(c,'#1a1a2e');c.ctx.fillStyle='#2d2d2d';c.ctx.fillRect(50,30,300,180);c.ctx.strokeStyle='#555';c.ctx.strokeRect(50,30,300,180);v11i.forEach((it,i)=>{c.ctx.fillStyle=(i===v11s)?'#4ec9b0':'#2d2d30';c.ctx.fillRect(55,35+i*35,290,30);drawT(c,it,65,55+i*35,(i===v11s)?'#000':'#d4d4d4',13);});drawT(c,'Элементов: '+v11i.length,50,230,'#858585',11);}
+function v11a(){const c=getCanvas('c11');if(!c)return;const ns=['Новая заметка','Ещё заметка','Задача','Идея','Важно'];v11i.push(ns[v11i.length%ns.length]+' '+(v11i.length+1));drawL11(c);updateVizInfo('v11i','addItem() добавил элемент. Всего: '+v11i.length);}
+function v11r2(){const c=getCanvas('c11');if(!c)return;if(v11s>=0&&v11s<v11i.length){const rm=v11i[v11s];v11i.splice(v11s,1);v11s=-1;drawL11(c);updateVizInfo('v11i','takeItem() удалил: "'+rm+'"');}else{updateVizInfo('v11i','⚠ Сначала выберите элемент (кликните по нему в коде: selectedItems()[0])');}}
+function v11c(){v11i=[];v11s=-1;const c=getCanvas('c11');if(c)drawL11(c);updateVizInfo('v11i','clear() — список очищен.');}
+
+// Slide 12: QInputDialog
+let v12d=false,v12r2='';
+function initC12(){const c=getCanvas('c12');if(!c)return;v12d=false;v12r2='';drawD12(c);updateVizInfo('v12i','Нажмите "Открыть диалог", чтобы увидеть модальное окно ввода.');}
+function drawD12(c){clearC(c,'#1a1a2e');c.ctx.fillStyle='#2d2d30';c.ctx.fillRect(30,30,340,180);c.ctx.strokeStyle='#555';c.ctx.strokeRect(30,30,340,180);drawT(c,'Основное окно',50,55,'#858585',12);if(v12d){c.ctx.fillStyle='rgba(0,0,0,0.5)';c.ctx.fillRect(0,0,c.canvas.width,c.canvas.height);c.ctx.fillStyle='#252526';c.ctx.fillRect(70,60,260,120);c.ctx.strokeStyle='#4ec9b0';c.ctx.lineWidth=2;c.ctx.strokeRect(70,60,260,120);drawT(c,'Добавить заметку',90,85,'#d4d4d4',13,true);c.ctx.fillStyle='#3c3c3c';c.ctx.fillRect(90,100,220,25);drawT(c,'Название заметки: ',90,145,'#858585',11);c.ctx.fillStyle='#4ec9b0';c.ctx.fillRect(180,150,60,22);c.ctx.fillStyle='#000';c.ctx.font='11px sans-serif';c.ctx.textAlign='center';c.ctx.fillText('OK',210,165);c.ctx.fillStyle='#555';c.ctx.fillRect(250,150,60,22);c.ctx.fillStyle='#d4d4d4';c.ctx.fillText('Отмена',280,165);c.ctx.textAlign='left';}if(v12r2){drawT(c,'Результат: "'+v12r2+'"',50,230,'#4ec9b0',12);}}
+function v12d2(){const c=getCanvas('c12');if(!c)return;v12d=true;drawD12(c);setTimeout(()=>{v12d=false;v12r2='Моя новая заметка';drawD12(c);updateVizInfo('v12i','Диалог закрыт. getText() вернул: ("'+v12r2+'", True)');},1500);updateVizInfo('v12i','Диалог открыт (модальное окно блокирует основное)...');}
+function v12r(){initC12();}
+
+// Slide 14: QVBoxLayout
+let v14w=['QLabel','QTextEdit','QPushButton'];
+function initC14(){const c=getCanvas('c14');if(!c)return;v14w=['QLabel','QTextEdit','QPushButton'];drawVL14(c);updateVizInfo('v14i','Добавляйте виджеты, чтобы увидеть, как они располагаются вертикально.');}
+function drawVL14(c){clearC(c,'#1a1a2e');const cs=['#4ec9b0','#569cd6','#ce9178','#dcdcaa','#c586c0'];const x=100,sy=30,w=200,h=50,g=10;v14w.forEach((w2,i)=>{const y=sy+i*(h+g);c.ctx.fillStyle=cs[i%cs.length];c.ctx.fillRect(x,y,w,h);c.ctx.fillStyle='#000';c.ctx.font='bold 13px sans-serif';c.ctx.textAlign='center';c.ctx.fillText(w2,x+w/2,y+30);c.ctx.textAlign='left';});drawT(c,'QVBoxLayout',10,20,'#858585',11);drawT(c,'Виджетов: '+v14w.length,10,260,'#858585',11);}
+function v14a(){const c=getCanvas('c14');if(!c)return;const ns=['QLineEdit','QListWidget','QCheckBox','QComboBox'];v14w.push(ns[v14w.length%ns.length]);drawVL14(c);updateVizInfo('v14i','addWidget() добавил виджет снизу. Всего: '+v14w.length);}
+function v14r2(){const c=getCanvas('c14');if(!c)return;if(v14w.length>0){const rm=v14w.pop();drawVL14(c);updateVizInfo('v14i','removeWidget() удалил: '+rm);}}
+function v14r(){initC14();}
+
+// Slide 15: QHBoxLayout
+let v15w=['Button 1','Button 2','Button 3'];
+function initC15(){const c=getCanvas('c15');if(!c)return;v15w=['Button 1','Button 2','Button 3'];drawHL15(c);updateVizInfo('v15i','Добавляйте виджеты, чтобы увидеть, как они располагаются горизонтально.');}
+function drawHL15(c){clearC(c,'#1a1a2e');const cs=['#4ec9b0','#569cd6','#ce9178','#dcdcaa','#c586c0'];const y=80,sx=30,w=100,h=50,g=10;v15w.forEach((w2,i)=>{const x=sx+i*(w+g);c.ctx.fillStyle=cs[i%cs.length];c.ctx.fillRect(x,y,w,h);c.ctx.fillStyle='#000';c.ctx.font='bold 12px sans-serif';c.ctx.textAlign='center';c.ctx.fillText(w2,x+w/2,y+30);c.ctx.textAlign='left';});drawT(c,'QHBoxLayout',10,20,'#858585',11);drawT(c,'Виджетов: '+v15w.length,10,170,'#858585',11);}
+function v15a(){const c=getCanvas('c15');if(!c)return;v15w.push('Button '+(v15w.length+1));drawHL15(c);updateVizInfo('v15i','addWidget() добавил виджет справа. Всего: '+v15w.length);}
+function v15r2(){const c=getCanvas('c15');if(!c)return;if(v15w.length>0){v15w.pop();drawHL15(c);updateVizInfo('v15i','removeWidget() удалил последний виджет.');}}
+function v15r(){initC15();}
+
+// Slide 16: QGridLayout
+let v16g=[];
+function initC16(){const c=getCanvas('c16');if(!c)return;v16g=[['7','8','9','/'],['4','5','6','*'],['1','2','3','-']];drawGL16(c);updateVizInfo('v16i','Добавляйте виджеты в сетку, чтобы увидеть, как работает QGridLayout.');}
+function drawGL16(c){clearC(c,'#1a1a2e');const cs=['#4ec9b0','#569cd6','#ce9178','#dcdcaa'];const sx=40,sy=30,w=75,h=50,g=8;v16g.forEach((row,ri)=>{row.forEach((cell,ci)=>{const x=sx+ci*(w+g),y=sy+ri*(h+g);c.ctx.fillStyle=cs[(ri+ci)%cs.length];c.ctx.fillRect(x,y,w,h);c.ctx.fillStyle='#000';c.ctx.font='bold 14px sans-serif';c.ctx.textAlign='center';c.ctx.fillText(cell,x+w/2,y+32);c.ctx.textAlign='left';});});drawT(c,'QGridLayout ('+v16g.length+' строк)',10,240,'#858585',11);}
+function v16add(){const c=getCanvas('c16');if(!c)return;const rows=['0','.','=','+'];if(v16g.length<4){v16g.push(rows);}drawGL16(c);updateVizInfo('v16i','addWidget(btn, '+v16g.length+', col) — добавлена строка '+v16g.length+'.');}
+function v16r(){initC16();}
+
+// Slide 17: QFormLayout
+let v17f=[['Имя:',''],['Email:',''],['Телефон:','']];
+function initC17(){const c=getCanvas('c17');if(!c)return;v17f=[['Имя:',''],['Email:',''],['Телефон:','']];drawFL17(c);updateVizInfo('v17i','Добавляйте поля формы, чтобы увидеть, как работает QFormLayout.');}
+function drawFL17(c){clearC(c,'#1a1a2e');const sx=40,sy=30,lw=100,fw=200,h=35,g=8;v17f.forEach((row,i)=>{const y=sy+i*(h+g);c.ctx.fillStyle='#858585';c.ctx.font='13px Consolas, monospace';c.ctx.fillText(row[0],sx,y+22);c.ctx.fillStyle='#2d2d30';c.ctx.fillRect(sx+lw,y,fw,h);c.ctx.strokeStyle='#555';c.ctx.strokeRect(sx+lw,y,fw,h);if(row[1]){drawT(c,row[1],sx+lw+10,y+22,'#d4d4d4',12);}});drawT(c,'QFormLayout — '+v17f.length+' полей',10,260,'#4ec9b0',11);}
+function v17add(){const c=getCanvas('c17');if(!c)return;const fs=[['Пароль:',''],['Адрес:',''],['Город:','']];v17f.push(fs[v17f.length%fs.length]);drawFL17(c);updateVizInfo('v17i','addRow() добавил поле. Всего: '+v17f.length);}
+function v17r(){initC17();}
+
+// Slide 18: stretch
+let v18s=[2,1];
+function initC18(){const c=getCanvas('c18');if(!c)return;v18s=[2,1];drawN18(c);updateVizInfo('v18i','Изменяйте пропорции stretch, чтобы увидеть, как меняется распределение пространства.');}
+function drawN18(c){clearC(c,'#1a1a2e');const total=v18s[0]+v18s[1];const w1=(340*v18s[0])/total;const w2=(340*v18s[1])/total;const x=30,y=40,h=180;c.ctx.fillStyle='#2d4a3e';c.ctx.fillRect(x,y,w1,h);c.ctx.fillStyle='#1e3a5f';c.ctx.fillRect(x+w1,y,w2,h);c.ctx.strokeStyle='#4ec9b0';c.ctx.lineWidth=2;c.ctx.strokeRect(x,y,w1,h);c.ctx.strokeRect(x+w1,y,w2,h);drawT(c,'col_1 (stretch='+v18s[0]+')',x+10,y+20,'#d4d4d4',12,true);drawT(c,'Текстовое поле',x+10,y+50,'#d4d4d4',11);drawT(c,'col_2 (stretch='+v18s[1]+')',x+w1+10,y+20,'#d4d4d4',12,true);drawT(c,'Список заметок',x+w1+10,y+50,'#d4d4d4',11);drawT(c,'Пропорции: '+v18s[0]+':'+v18s[1]+' ('+(v18s[0]*100/total)+'% : '+(v18s[1]*100/total)+'%)',30,240,'#4ec9b0',12);}
+function v18s2(s1,s2){v18s=[s1,s2];const c=getCanvas('c18');if(c)drawN18(c);updateVizInfo('v18i','stretch='+s1+':'+s2+' — левая колонка занимает '+(s1*100/(s1+s2))+'%, правая '+(s2*100/(s1+s2))+'%');}
+function v18r(){initC18();}
+
+// Slide 19: Button styling
+let v19s='normal';
+function initC19(){const c=getCanvas('c19');if(!c)return;v19s='normal';drawSB19(c);updateVizInfo('v19i','Переключайте состояния кнопки, чтобы увидеть, как работают псевдоклассы.');}
+function drawSB19(c){clearC(c,'#1a1a2e');let color='#4ec9b0';let label='Обычное состояние — QPushButton';if(v19s==='hover'){color='#3da895';label=':hover — наведение мыши';}if(v19s==='pressed'){color='#2d8a78';label=':pressed — нажатие';}c.ctx.fillStyle=color;c.ctx.fillRect(100,70,200,50);c.ctx.fillStyle='#fff';c.ctx.font='bold 14px sans-serif';c.ctx.textAlign='center';c.ctx.fillText('Создать заметку',200,100);c.ctx.textAlign='left';drawT(c,label,100,150,'#4ec9b0',12,true);drawT(c,'background-color: '+color,100,170,'#ce9178',11);}
+function v19s2(s){v19s=s;const c=getCanvas('c19');if(c)drawSB19(c);updateVizInfo('v19i','Состояние: '+s+'. Цвет фона изменён через CSS-псевдокласс.');}
+function v19r(){initC19();}
+
+document.addEventListener('DOMContentLoaded',function(){initNav();initSlideCanvases(1);});
+</script>
+</body>
+</html>
